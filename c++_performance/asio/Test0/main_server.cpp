@@ -6,7 +6,7 @@
 #include <boost/thread/thread.hpp>
 using namespace std;
 using namespace boost::asio;
-static const int BUFF_SIZE = 1024;
+static const int BUFF_SIZE = 1024 * 64;
 io_service service;
 int main()
 {
