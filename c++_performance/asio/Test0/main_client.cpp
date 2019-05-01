@@ -6,7 +6,7 @@
 using namespace std;
 using namespace chrono;
 using namespace boost::asio;
-static const int BUFF_SIZE = 1024 * 64;
+static const int BUFF_SIZE = 1024;
 static const int LOOP = 1000000;
 io_service service;
 int main()
