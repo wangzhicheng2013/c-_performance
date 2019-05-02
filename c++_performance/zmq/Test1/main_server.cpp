@@ -31,7 +31,6 @@ int main()
 		int len = zmq_msg_recv(&msg, server, 0);
 		if (len > 0)
 		{
-			zmq_msg_send(&msg, server, 0);
 		}
 		else
 		{
@@ -39,5 +38,6 @@ int main()
 		}
 		zmq_msg_close(&msg);
 	}
+
 	return 0;
 }
