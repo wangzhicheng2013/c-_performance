@@ -9,19 +9,53 @@ bool FileSort::MergeSort(const FilePathConfig &config)
 	{
 		return false;
 	}
-	if (false == OpenFileStream(config))
+	bool succ = true;
+	if (true == OpenFileStream(config) && true == ReadFileStream())
 	{
-		return false;
+		CoreSort();
 	}
-	string str;
-	while (!readfilestream0.eof())
+	else
 	{
-		readfilestream0 >> str;
-		cout << str << endl;
-		str.clear();
+		succ = false;
 	}
 	CloseFileStream();
 	return true;
+}
+bool FileSort::ReadFileStream()
+{
+	curr_size = 0;
+	v.clear();
+	ReadFileStream(readfilestream0, v);
+	ReadFileStream(readfilestream1, v);
+	return !v.empty();
+}
+void FileSort::ReadFileStream(ifstream& readfilestream, vector<int>&v)
+{
+	string line;
+	while (!readfilestream.eof())
+	{
+		readfilestream >> line;
+		curr_size += line.size();
+		if (curr_size >= MAXFILESIZE)
+		{
+			return;
+		}
+		if (line.empty())
+		{
+			continue;
+		}
+		int number = atoi(line.c_str());
+		v.emplace_back(number);
+		line.clear();
+	}
+}
+void FileSort::CoreSort()
+{
+	sort(begin(v), end(v));
+	for (auto& e : v)
+	{
+		writefilestream << e << endl;
+	}
 }
 bool FileSort::OpenFileStream(const FilePathConfig &config)
 {

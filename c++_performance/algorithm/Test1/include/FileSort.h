@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <string>
+#include <vector>
 #include <fstream>
 #include <algorithm>
 using namespace std;
@@ -29,13 +30,15 @@ private:
 		return nullptr != config.filepath0 && nullptr != config.filepath1 && nullptr != config.filepath;
 	}
 	bool OpenFileStream(const FilePathConfig &);
+	bool ReadFileStream();
+	void ReadFileStream(ifstream &readfilestream, vector<int>&);
 	inline void CloseFileStream()
 	{
 		readfilestream0.close();
 		readfilestream1.close();
 		writefilestream.close();
 	}
-
+	void CoreSort();
 private:
 	FileSort();
 	virtual ~FileSort();
@@ -45,6 +48,10 @@ private:
 	ifstream readfilestream0;
 	ifstream readfilestream1;
 	ofstream writefilestream;
+private:
+	vector<int>v;
+private:
+	size_t curr_size;
 private:
 	const size_t MAXFILESIZE = 1024 * 1024;
 };
