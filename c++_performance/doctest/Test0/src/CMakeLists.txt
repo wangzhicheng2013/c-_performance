@@ -1,0 +1,6 @@
+aux_source_directory (. SRC_LIST)
+include_directories (../include)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fprofile-arcs -ftest-coverage -pthread -std=c++17")
+set (CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs -ftest-coverage")
+add_executable (UnitTest ${SRC_LIST})
+set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
