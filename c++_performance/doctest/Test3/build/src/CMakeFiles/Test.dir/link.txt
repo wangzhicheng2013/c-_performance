@@ -1,0 +1,1 @@
+/usr/bin/c++   -g -pthread -std=c++17   CMakeFiles/Test.dir/FileSort.cpp.o CMakeFiles/Test.dir/FileSortUT.cpp.o CMakeFiles/Test.dir/main.cpp.o  -o ../../bin/Test 
