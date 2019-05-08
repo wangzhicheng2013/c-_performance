@@ -1,0 +1,33 @@
+sudo apt-get --purge remove mysql-server mysql-common mysql-client
+sudo apt-get install mysql-server mysql-common mysql-client
+
+sudo mysqladmin -u root password your-new-password
+sudo service mysql restart
+
+创建新用户
+create user 'user01'@'127.0.0.1' identified by '666666';
+ 
+create user 'user01'@'%' identified by '666666';
+
+grant all privileges on *.* to 'user01'@'127.0.0.1' identified by '666666';
+# 赋予新用户，从本地操作所有数据库.所有数据表的所有权限
+ 
+grant all privileges on *.* to 'user01'@'%' identified by '666666';
+# 赋予新用户，从外部操作所有数据库.所有数据表的所有权限（没有外部客户端的IP限制，但本地有限制）
+
+
+FLUSH PRIVILEGES;
+# 刷新权限（有时很必要）
+
+
+##1 创建数据库weixx
+CREATE DATABASE weixx;
+##2 创建用户wxx(密码654321) 并赋予其weixx数据库的所有权限
+GRANT ALL PRIVILEGES ON weixx.* TO wxx@localhost IDENTIFIED BY "654321";
+
+##1 允许wxx用户可以从任意机器上登入mysql
+GRANT ALL PRIVILEGES ON weixx.* TO wxx@"%" IDENTIFIED BY "654321"; 
+
+$sudo gedit /etc/mysql/my.cnf
+##在最后添加如下配置，允许其他机器访问MySQL
+>skip-networking => # skip-networking

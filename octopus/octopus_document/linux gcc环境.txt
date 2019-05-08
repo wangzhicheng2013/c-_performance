@@ -1,0 +1,12 @@
+﻿# ubuntu下编译gcc
+
+      sudo add-apt-repository ppa:ubuntu-toolchain-r/test sudo apt-get update
+
+      sudo apt-get install gcc-8 g++-8
+
+      移除gcc软链接
+      sudo rm -r gcc
+      sudo rm -r g++
+
+      sudo ln -s /usr/bin/gcc-8 /usr/bin/gcc
+      sudo ln -s /usr/bin/g++-8 /usr/bin/g++
