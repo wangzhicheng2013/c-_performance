@@ -21,14 +21,14 @@
 *  2019/05/28 | 1.0.0     |                | delete reluctant variables
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
-#include "zmq.h"
+#include "zmq_agent.hpp"
 #include "msgpack.hpp"
 #include <string.h>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <chrono>
-using namespace std;
+using namespace zmq_self_agent;
 static const int SIZE = 1024;
 static const int LOOP = 100;
 const char *g_server_address = "tcp://192.168.4.6:9141";

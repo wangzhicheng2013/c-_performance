@@ -1,3 +1,4 @@
+
 /*
  * unit_test.cpp
  *
@@ -29,14 +30,17 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <stdio.h>
 #include <time.h>
+#include <iostream>
 #include <string>
 #include <queue>
 #include <thread>
 #include <chrono>
-#include "msgpack.hpp"
 #include "doctest.hpp"
-#include "zmq.h"
-using namespace std;
+#include "zmq_agent.hpp"
+#include "zeg_data_define.h"
+#include "zeg_config.hpp"
+using namespace zeg_message_interface;
+using namespace zmq_self_agent;
 class my_class {
 public:
 	my_class() {
@@ -74,7 +78,6 @@ static const int LOOP = 100;
 const char *g_server_address = "tcp://localhost:9141";
 const char *g_local_address = "tcp://*:9141";
 char g_send_buf[SIZE] = "";
-queue<my_class>g_queue;
 void pack(int i) {
 	snprintf(g_send_buf, SIZE, "AAA%d", i);
 	my_class obj;
@@ -83,13 +86,13 @@ void pack(int i) {
 	buffer.clear();
 	msgpack::pack(buffer, obj);
 }
-void unpack(const char *buf, int size) {
+void unpack(const char *buf, int size, queue<my_class>&my_queue) {
 	msgpack::unpacked msg;
 	msgpack::unpack(&msg, buf, size);
 	msgpack::object obj = msg.get();
 	my_class my_obj;
 	obj.convert(&my_obj);
-	g_queue.push(my_obj);
+	my_queue.push(my_obj);
 }
 int send_cnt = 0;
 bool send_thread() {
@@ -116,7 +119,7 @@ bool send_thread() {
 	return true;
 }
 int recv_cnt = 0;
-bool recv_thread() {
+bool recv_thread(queue<my_class>&my_queue) {
 	void *context = zmq_ctx_new();
 	void *server = zmq_socket(context, ZMQ_PULL);
 	if (nullptr == context || nullptr == server) {
@@ -129,7 +132,7 @@ bool recv_thread() {
 		zmq_msg_init(&message);
 		int len = zmq_msg_recv(&message, server, 0);
 		++recv_cnt;
-		unpack((char *)zmq_msg_data(&message), len);
+		unpack((char *)zmq_msg_data(&message), len, my_queue);
 		zmq_msg_close(&message);
 		if (recv_cnt >= LOOP) {
 			break;
@@ -140,8 +143,9 @@ bool recv_thread() {
 	return true;
 }
 TEST_CASE("testing zmq send and recv") {
+	queue<my_class>my_queue;
 	thread th0(send_thread);
-	thread th1(recv_thread);
+	thread th1(recv_thread, ref(my_queue));
 	if (th0.joinable()) {
 		th0.join();
 	}
@@ -150,13 +154,116 @@ TEST_CASE("testing zmq send and recv") {
 	}
 	CHECK(send_cnt == LOOP);
 	CHECK(recv_cnt == LOOP);
-	CHECK(g_queue.size() == LOOP);
+	CHECK(my_queue.size() == LOOP);
 	int cnt = 0;
 	char buf[SIZE] = "";
-	while (g_queue.empty()) {
+	while (my_queue.empty()) {
 		my_class obj;
-		obj = g_queue.front();
-		g_queue.pop();
+		obj = my_queue.front();
+		my_queue.pop();
+		snprintf(buf, SIZE, "AAA%d", cnt);
+		CHECK(obj.my_int == cnt);
+		CHECK(obj.my_string == buf);
+		++cnt;
+	}
+}
+TEST_CASE("testing znavigate_command pack and unpack") {
+	int loop = 1000;
+	int points = 3;
+	char buf[1024] = "";
+	for (int i = 0;i < loop;i++) {
+		znavigate_command my_obj;
+		my_obj.task_id = i;
+		for (int i = 0;i < points;i++) {
+			my_obj.task_id = i;
+			zwaypoint way_point = {{{1000, 1000, 1000, 1000}, 1000}, {1000, 1000, 1000, 1000, 1000}};
+			my_obj.waypoints_.emplace_back(way_point);
+		}
+		buffer.clear();
+		msgpack::pack(buffer, my_obj);
+
+		msgpack::unpacked msg;
+		msgpack::unpack(&msg, buffer.data(), buffer.size());
+		msgpack::object obj = msg.get();
+		znavigate_command my_obj1;
+		obj.convert(&my_obj1);
+		CHECK(my_obj1.task_id == my_obj.task_id);
+		CHECK(my_obj1.waypoints_.size()== my_obj.waypoints_.size());
+		ztolerance t = {1000, 1000, 1000, 1000, 1000};
+		for (size_t i = 0;i < my_obj1.waypoints_.size();i++) {
+			CHECK(1000 == my_obj1.waypoints_[i].tolerance_.x_thres);
+			CHECK(1000 == my_obj1.waypoints_[i].posetime_.time);
+			CHECK(1000 == my_obj1.waypoints_[i].posetime_.pose_.theta);
+			CHECK(1000 == my_obj1.waypoints_[i].posetime_.pose_.blief);
+		}
+	}
+}
+TEST_CASE("testing zeg configuration") {
+	CHECK(0 != zeg_config::get_instance().g_server_address[0]);
+	CHECK(0 != zeg_config::get_instance().g_local_address[0]);
+}
+bool send_thread1() {
+	this_thread::sleep_for(chrono::seconds(4));
+	send_cnt = 0;
+	zmq_config config;
+	zmq_agent zmq_client;
+	config.sock_type = ZMQ_PUSH;
+	config.addr = g_server_address;
+	if (zmq_client.init(config)) {
+		return false;
+	}
+	for (int i = 0;i < LOOP;i++) {
+		pack(i);
+		int size = buffer.size();
+		if (size == zmq_client.send(buffer.data(), buffer.size())) {
+			++send_cnt;
+		}
+	}
+	return true;
+}
+bool recv_thread1(queue<my_class>&my_queue) {
+	recv_cnt = 0;
+	zmq_config config;
+	zmq_agent zmq_server;
+	config.sock_type = ZMQ_PULL;
+	config.addr = g_local_address;
+	if (zmq_server.init(config)) {
+			return false;
+	}
+	this_thread::sleep_for(chrono::seconds(2));
+	string recv_str;
+	while (true) {
+		recv_str.clear();
+		if (true == zmq_server.recv(recv_str)) {
+			++recv_cnt;
+			int len = recv_str.size();
+			unpack(recv_str.c_str(), len, my_queue);
+		}
+		if (recv_cnt >= LOOP) {
+			break;
+		}
+	}
+	return true;
+}
+TEST_CASE("testing zmq agent send and recv") {
+	queue<my_class>my_queue;
+	thread th0(send_thread1);
+	thread th1(recv_thread1, ref(my_queue));
+	if (th0.joinable()) {
+		th0.join();
+	}
+	if (th1.joinable()) {
+		th1.join();
+	}
+	CHECK(send_cnt == LOOP);
+	CHECK(recv_cnt == LOOP);
+	CHECK(my_queue.size() == LOOP);
+	int cnt = 0;
+	char buf[SIZE] = "";
+	while (my_queue.empty()) {
+		my_class obj;
+		obj = my_queue.front();
+		my_queue.pop();
 		snprintf(buf, SIZE, "AAA%d", cnt);
 		CHECK(obj.my_int == cnt);
 		CHECK(obj.my_string == buf);
