@@ -1,2 +1,0 @@
-# octopus_document
-
