@@ -1,9 +1,9 @@
 /*****************************************************************************
-*  zeg configuration entry                                                   *
+*  zeg recv navigate class                                                   *
 *  Copyright (C) 2019                                                        *
 *                                                                            *
-*  @file     zeg_config.hpp                                                  *
-*  @brief    zeg configuration entry                                         *
+*  @file     zeg recv_navigate.hpp                                           *
+*  @brief    recv navigate message from client                               *
 *  Details.                                                                  *
 *                                                                            *
 *  @author                                                                   *
@@ -16,41 +16,46 @@
 *  Change History :                                                          *
 *  <Date>     | <Version> | <Author>       | <Description>                   *
 *----------------------------------------------------------------------------*
-*  2019/05/27 | 1.0.0     |                | Create file                     *
-*----------------------------------------------------------------------------*
-*  2019/05/29 | 1.0.0     |                | Add stat info                   *
+*  2019/05/29 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
-#ifndef SRC_ZEG_CONFIG_HPP_
-#define SRC_ZEG_CONFIG_HPP_
-#include <stdint.h>
-#include <string>
-#include <atomic>
-#include "blockingconcurrentqueue.h"
+#ifndef SRC_ZEG_RECV_NAVIGATE_HPP_
+#define SRC_ZEG_RECV_NAVIGATE_HPP_
+#include "zeg_config.hpp"
+#include "zmq_agent.hpp"
+#include "base_thread.hpp"
 namespace zeg_message_interface {
-using namespace std;
-using namespace moodycamel;
-class zeg_config {
-private:
-	zeg_config() = default;
-	virtual ~zeg_config() = default;
+using namespace zmq_self_agent;
+class zeg_recv_navigate : public base_thread {
 public:
-	inline static zeg_config &get_instance() {
-		return config_;
+	bool init() {
+		config.sock_type = ZMQ_PULL;
+		config.addr = zeg_config::get_instance().local_navigate_address;
+		if (false ==  zmq_server_navigate.init(config)) {
+			return false;
+		}
+		this_thread::sleep_for(chrono::seconds(1));
+		return true;
 	}
-public:
-	static zeg_config config_;
-public:
-	const char *g_server_address = "tcp://localhost:9141";
-	const char *g_local_address = "tcp://*:9142";
-	const char *local_navigate_address = "tcp://*:9143";
-	const int max_queue_size = 1000;
-public:
-	atomic<uint64_t>recv_navigate_cmd_counter_;
-public:
-	BlockingConcurrentQueue<string>navigate_cmd_queue;
+protected:
+	virtual void todo() override {
+		string recv_str;
+		while (true) {
+			zmq_server_navigate.recv(recv_str);
+			if (zeg_config::get_instance().navigate_cmd_queue.size_approx() > zeg_config::get_instance().max_queue_size) {
+				continue;
+			}
+			if (true == zeg_config::get_instance().navigate_cmd_queue.enqueue(recv_str)) {
+				zeg_config::get_instance().recv_navigate_cmd_counter_.fetch_add(1, std::memory_order_release);
+			}
+		}
+	}
+private:
+	zmq_agent zmq_server_navigate;
+	zmq_config config;
 };
-zeg_config zeg_config::config_;
 }
 
-#endif /* SRC_ZEG_CONFIG_HPP_ */
+
+
+#endif /* SRC_ZEG_RECV_NAVIGATE_HPP_ */

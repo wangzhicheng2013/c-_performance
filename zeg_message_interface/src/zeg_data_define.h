@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include <vector>
 #include "msgpack.hpp"
+namespace zeg_message_interface {
 using namespace std;
 typedef struct zpos {
     int x;
@@ -55,5 +56,6 @@ typedef struct znavigate_command {
 	vector<zwaypoint>waypoints_;
 	MSGPACK_DEFINE(task_id, waypoints_);
 }znavigate_command;
+}
 
 #endif /* SRC_ZEG_DATA_DEFINE_H_ */

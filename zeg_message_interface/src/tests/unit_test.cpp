@@ -2,7 +2,7 @@
 /*
  * unit_test.cpp
  *
- *  Created on: 2019年5月28日
+ *  Created on: 2019年5月29日
  *      Author: root
  */
 /*****************************************************************************
@@ -16,7 +16,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-28                                                      *
+*  @date     2019-05-29                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -25,6 +25,7 @@
 *----------------------------------------------------------------------------*
 *  2019/05/28 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*
+*  2019/05/29 | 1.0.0     |                | add base thread test            *
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
@@ -39,6 +40,7 @@
 #include "zmq_agent.hpp"
 #include "zeg_data_define.h"
 #include "zeg_config.hpp"
+#include "base_thread.hpp"
 using namespace zeg_message_interface;
 using namespace zmq_self_agent;
 class my_class {
@@ -269,4 +271,26 @@ TEST_CASE("testing zmq agent send and recv") {
 		CHECK(obj.my_string == buf);
 		++cnt;
 	}
+}
+class add_thread : public base_thread  {
+protected:
+	virtual void todo() override {
+		sum = 0;
+		for (int i = 0;i < n;i++) {
+			sum += i;
+		}
+	}
+public:
+	int sum;
+	int n;
+};
+TEST_CASE("testing thread base") {
+	add_thread my_thread;
+	my_thread.n = 1000000;
+	my_thread.run();
+	int sum = 0;
+	for (int i = 0;i < my_thread.n;i++) {
+			sum += i;
+	}
+	CHECK(sum == my_thread.sum);
 }
