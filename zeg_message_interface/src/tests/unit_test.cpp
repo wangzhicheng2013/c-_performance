@@ -36,13 +36,19 @@
 #include <queue>
 #include <thread>
 #include <chrono>
+#include <experimental/filesystem>
 #include "doctest.hpp"
 #include "zmq_agent.hpp"
 #include "zeg_data_define.h"
 #include "zeg_config.hpp"
 #include "base_thread.hpp"
+#include "zeg_recv_navigate.hpp"
+#include "zeg_stat_output.hpp"
 using namespace zeg_message_interface;
 using namespace zmq_self_agent;
+namespace fs = experimental::filesystem;
+static const int SIZE = 64;
+static const int LOOP = 100000;
 class my_class {
 public:
 	my_class() {
@@ -75,8 +81,6 @@ TEST_CASE("testing msg pack and unpack") {
 		CHECK(my_obj1.my_string == my_obj.my_string);
 	}
 }
-static const int SIZE = 64;
-static const int LOOP = 100;
 const char *g_server_address = "tcp://localhost:9141";
 const char *g_local_address = "tcp://*:9141";
 char g_send_buf[SIZE] = "";
@@ -98,7 +102,7 @@ void unpack(const char *buf, int size, queue<my_class>&my_queue) {
 }
 int send_cnt = 0;
 bool send_thread() {
-	this_thread::sleep_for(chrono::seconds(4));
+	this_thread::sleep_for(chrono::seconds(2));
 	void *context = zmq_ctx_new();
 	void *client = zmq_socket(context, ZMQ_PUSH);
 	if (nullptr == context || nullptr == client) {
@@ -128,7 +132,7 @@ bool recv_thread(queue<my_class>&my_queue) {
 		return false;
 	}
 	zmq_bind(server, g_local_address);
-	this_thread::sleep_for(chrono::seconds(2));
+	this_thread::sleep_for(chrono::seconds(1));
 	while (true) {
 		zmq_msg_t message = {0};
 		zmq_msg_init(&message);
@@ -204,13 +208,13 @@ TEST_CASE("testing zeg configuration") {
 	CHECK(0 != zeg_config::get_instance().g_server_address[0]);
 	CHECK(0 != zeg_config::get_instance().g_local_address[0]);
 }
-bool send_thread1() {
-	this_thread::sleep_for(chrono::seconds(4));
+bool send_thread1(const char *server_address) {
+	this_thread::sleep_for(chrono::seconds(2));
 	send_cnt = 0;
 	zmq_config config;
 	zmq_agent zmq_client;
 	config.sock_type = ZMQ_PUSH;
-	config.addr = g_server_address;
+	config.addr = server_address;
 	if (zmq_client.init(config)) {
 		return false;
 	}
@@ -232,7 +236,7 @@ bool recv_thread1(queue<my_class>&my_queue) {
 	if (zmq_server.init(config)) {
 			return false;
 	}
-	this_thread::sleep_for(chrono::seconds(2));
+	this_thread::sleep_for(chrono::seconds(1));
 	string recv_str;
 	while (true) {
 		recv_str.clear();
@@ -249,7 +253,7 @@ bool recv_thread1(queue<my_class>&my_queue) {
 }
 TEST_CASE("testing zmq agent send and recv") {
 	queue<my_class>my_queue;
-	thread th0(send_thread1);
+	thread th0(send_thread1, g_server_address);
 	thread th1(recv_thread1, ref(my_queue));
 	if (th0.joinable()) {
 		th0.join();
@@ -288,9 +292,63 @@ TEST_CASE("testing thread base") {
 	add_thread my_thread;
 	my_thread.n = 1000000;
 	my_thread.run();
+	my_thread.join();
 	int sum = 0;
 	for (int i = 0;i < my_thread.n;i++) {
 			sum += i;
 	}
 	CHECK(sum == my_thread.sum);
+}
+void recv_navigate_cmd(zeg_recv_navigate &obj) {
+	string recv_str;
+	int recv_cnt = 0;
+	while (true) {
+		obj.zmq_server_navigate.recv(recv_str);
+		++recv_cnt;
+		LOG_INFO << "recv navigate command." << "\n";
+		if (true == zeg_config::get_instance().navigate_cmd_queue.enqueue(recv_str)) {
+			zeg_config::get_instance().recv_navigate_cmd_counter_.fetch_add(1, memory_order_release);
+		}
+		if (recv_cnt >= LOOP) {
+			LOG_INFO << "queue is full." << "\n";
+			break;
+		}
+	}
+	zeg_stat_output obj1;
+	obj1.test_stat_recv_navigate_command();
+}
+TEST_CASE("testing recv navigate") {
+	thread th0(send_thread1, zeg_config::get_instance().test_navigate_address);
+	zeg_recv_navigate obj;
+	CHECK(true == obj.init());
+	thread th1(recv_navigate_cmd, ref(obj));
+	if (th0.joinable()) {
+		th0.join();
+	}
+	if (th1.joinable()) {
+		th1.join();
+	}
+	CHECK(LOOP == zeg_config::get_instance().navigate_cmd_queue.size_approx());
+}
+TEST_CASE("testing stat output for navigate") {
+	string log_file;
+	string log_line;
+	char buf[64] = "";
+	snprintf(buf, sizeof(buf), "%d", LOOP);
+	bool found = false;
+	sleep(1);
+	for (auto &p : fs::directory_iterator(zeg_config::get_instance().zeg_log_path)) {
+		log_file = p.path();
+		fstream fs(log_file.c_str());
+		REQUIRE(fs);
+		while (!fs.eof()) {
+			fs >> log_line;
+			if (log_line.find(buf) != string::npos) {
+				found = true;
+				break;
+			}
+		}
+		fs.close();
+	}
+	CHECK(true == found);
 }

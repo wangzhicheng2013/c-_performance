@@ -29,12 +29,18 @@ public:
 	virtual ~base_thread() = default;
 public:
 	void run() {
-		base_thread *p = this;
-		thread([&p] {
-					p->todo();
-			}).join();
+		thd_ = thread([this] {
+					this->todo();
+			});
+	}
+	void join() {
+		if (thd_.joinable()) {
+			thd_.join();
+		}
 	}
 protected:
 	virtual void todo() = 0;
+private:
+	thread thd_;
 };
 #endif /* SRC_BASE_THREAD_HPP_ */

@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-28                                                      *
+*  @date     2019-05-29                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -17,7 +17,8 @@
 *  <Date>     | <Version> | <Author>       | <Description>                   *
 *----------------------------------------------------------------------------*
 *  2019/05/27 | 1.0.0     |                | Create file                     *
-*----------------------------------------------------------------------------*                                                                   *
+*----------------------------------------------------------------------------*
+*  2019/05/27 | 1.0.0     |                | Add command type                *                                                                   *
 *****************************************************************************/
 #ifndef SRC_ZEG_DATA_DEFINE_H_
 #define SRC_ZEG_DATA_DEFINE_H_
@@ -26,6 +27,10 @@
 #include "msgpack.hpp"
 namespace zeg_message_interface {
 using namespace std;
+enum {
+	NAVIGATE_COMMAND,
+	LOCATE_COMMAND
+};
 typedef struct zpos {
     int x;
     int y;

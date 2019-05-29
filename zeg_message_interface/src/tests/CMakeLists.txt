@@ -2,4 +2,4 @@ add_doctest(unit_test.cpp unit_test)
 include_directories (
 	"../"
 )
-target_link_libraries (unit_test zmq)
+target_link_libraries (unit_test zmq stdc++fs)
