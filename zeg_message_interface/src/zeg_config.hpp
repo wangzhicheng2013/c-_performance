@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-29                                                      *
+*  @date     2019-05-30                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -19,6 +19,8 @@
 *  2019/05/27 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*
 *  2019/05/29 | 1.0.0     |                | Add stat info                   *
+*----------------------------------------------------------------------------*
+*  2019/05/30 | 1.0.0     |                | Add thread pool                 *
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
 #ifndef SRC_ZEG_CONFIG_HPP_
@@ -28,12 +30,15 @@
 #include <string>
 #include <atomic>
 #include <fstream>
+#include <future>
 #include "blockingconcurrentqueue.h"
 #include "NanoLog.hpp"
 #include "zeg_data_define.h"
+#include "thread_pool.hpp"
 namespace zeg_message_interface {
 using namespace std;
 using namespace moodycamel;
+using namespace tp;
 class zeg_config {
 private:
 	zeg_config() {
@@ -47,7 +52,7 @@ public:
 private:
 	inline void init_log() {
 		mkdir(zeg_log_path, 777);
-		nanolog::initialize(nanolog::NonGuaranteedLogger(3), zeg_log_path, zeg_log_file , max_log_size);
+		nanolog::initialize(nanolog::GuaranteedLogger(), zeg_log_path, zeg_log_file , max_log_size);
 		nanolog::set_log_level(nanolog::LogLevel::INFO);
 	}
 public:
@@ -57,15 +62,16 @@ public:
 	const char *g_local_address = "tcp://*:9142";
 	const char *local_navigate_address = "tcp://*:9143";
 	const char *test_navigate_address = "tcp://localhost:9143";
-	const char *zeg_log_path = "/opt/log/";
+	const char *zeg_log_path = "/opt/log";
 	const char *zeg_log_file = "zeg_message_interface_log";
-	const uint32_t max_log_size = 1;	// 10M
+	const uint32_t max_log_size = 1;	// 1M
 	const int max_queue_size = 1000;
 	const int stat_log_interval = 10;
 public:
 	atomic<uint64_t>recv_navigate_cmd_counter_;
 public:
 	BlockingConcurrentQueue<string>navigate_cmd_queue;
+	ThreadPool thread_pool;
 };
 zeg_config zeg_config::config_;
 }

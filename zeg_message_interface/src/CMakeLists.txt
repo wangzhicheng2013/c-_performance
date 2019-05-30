@@ -3,6 +3,7 @@ include_directories (
 	"../include/doctest"
 	"../include/zmq"
 	"../include/nanolog"
+	"../include/thread_pool"
        	"../include/msgpack"
 )
 link_directories (${PROJECT_SOURCE_DIR}/libs)

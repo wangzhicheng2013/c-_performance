@@ -33,7 +33,7 @@ public:
 		config.addr = zeg_config::get_instance().local_navigate_address;
 		unsigned char ret = zmq_server_navigate.init(config);
 		if (NO_ERROR !=  ret) {
-			LOG_CRIT << "zmq error code = " <<  ret << "\n";
+			LOG_CRIT << "zmq error code = " <<  ret;
 			return false;
 		}
 		this_thread::sleep_for(chrono::seconds(1));
@@ -44,7 +44,7 @@ protected:
 		string recv_str;
 		while (true) {
 			zmq_server_navigate.recv(recv_str);
-			LOG_INFO << "recv navigate command." << "\n";
+			LOG_INFO << "recv navigate command.";
 			if (zeg_config::get_instance().navigate_cmd_queue.size_approx() > zeg_config::get_instance().max_queue_size) {
 				LOG_INFO << "queue is full." << "\n";
 				continue;

@@ -41,7 +41,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 #include <queue>
 #include <fstream>
 #include <sstream>
-
+using namespace std;
 #define YEAR (1900)
 #define MONTH (1)
 #define CCT (+8)
@@ -283,6 +283,11 @@ namespace
 		}
 
 		return ostr.str();
+	}
+	inline void get_date(char *date, size_t size) {
+		time_t tt = time(NULL);
+		tm * gmtime = std::gmtime(&tt);
+		snprintf(date, size, "%d%02d%02d", gmtime->tm_year + YEAR, gmtime->tm_mon + MONTH, gmtime->tm_mday);
 	}
 	/* I want [2016-10-13 00:01:23.528514] */
 	void format_timestamp(std::ostream& os, uint64_t timestamp)
@@ -809,7 +814,7 @@ namespace nanolog
 	public:
 		FileWriter(std::string const& log_directory, std::string const& log_file_name, uint32_t log_file_roll_size_mb)
 			: m_log_file_roll_size_bytes(log_file_roll_size_mb * 1024 * 1024)
-			, m_name(log_directory + log_file_name)
+			, m_name(log_directory + "/" + log_file_name)
 		{
 			//roll_file();
 			create_file();
@@ -829,17 +834,17 @@ namespace nanolog
 	private:
 		std::string get_real_logfilename()
 		{
-			std::string log_file_name = m_name;
+			string log_file_name = m_name;
 			log_file_name.append("_");
-			std::string date_time = get_datetime(timestamp_now());
-			log_file_name.append(date_time);
+			char date[64] = "";
+			get_date(date, sizeof(date));
+			log_file_name.append(date);
 			log_file_name.append("_");
-			log_file_name.append(std::to_string(++m_file_number));
+			log_file_name.append(std::to_string(m_file_number));
+			m_file_number = (m_file_number + 1) % MAX_LOG_FILES_COUNT;
 			return log_file_name;
 		}
-
-		void create_file()
-		{
+		void create_file() {
 			std::string file_name = get_real_logfilename();
 			m_os.reset(new std::ofstream());
 			m_os->open(file_name, std::ofstream::out | std::ofstream::trunc);
@@ -852,9 +857,7 @@ namespace nanolog
 				m_os->flush();
 				m_os->close();
 			}
-
 			m_bytes_written = 0;
-			m_file_number = 0;
 			// m_os.reset(new std::ofstream());
 			// TODO Optimize this part. Does it even matter ?
 			// std::string log_file_name = m_name;
@@ -864,7 +867,9 @@ namespace nanolog
 			// m_os->open(log_file_name, std::ofstream::out | std::ofstream::trunc);
 			create_file();
 		}
-
+	// todo by wangbin
+	private:
+		const int MAX_LOG_FILES_COUNT = 5;
 	private:
 		uint32_t m_file_number = 0;
 		std::streamoff m_bytes_written = 0;

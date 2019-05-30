@@ -54,7 +54,7 @@ private:
 		case LOCATE_COMMAND:
 			break;
 		default:
-			LOG_CRIT << "unknown command type." << "\n";
+			LOG_CRIT << "unknown command type.";
 			return;
 		}
 		if (0 == last_value) {
@@ -64,8 +64,8 @@ private:
 			interval_value = count - last_value;
 		}
 		last_value = count;
-		LOG_INFO << str0 << interval_value << "\n";
-		LOG_INFO << str1 << count << "\n";
+		LOG_INFO << str0 << interval_value;
+		LOG_INFO << str1 << count;
 	}
 private:
 	uint64_t navigate_interval_value;

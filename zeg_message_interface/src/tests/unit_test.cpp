@@ -48,7 +48,7 @@ using namespace zeg_message_interface;
 using namespace zmq_self_agent;
 namespace fs = experimental::filesystem;
 static const int SIZE = 64;
-static const int LOOP = 100000;
+static const int LOOP = 800;
 class my_class {
 public:
 	my_class() {
@@ -305,12 +305,12 @@ void recv_navigate_cmd(zeg_recv_navigate &obj) {
 	while (true) {
 		obj.zmq_server_navigate.recv(recv_str);
 		++recv_cnt;
-		LOG_INFO << "recv navigate command." << "\n";
+		LOG_INFO << "recv navigate command.";
 		if (true == zeg_config::get_instance().navigate_cmd_queue.enqueue(recv_str)) {
 			zeg_config::get_instance().recv_navigate_cmd_counter_.fetch_add(1, memory_order_release);
 		}
 		if (recv_cnt >= LOOP) {
-			LOG_INFO << "queue is full." << "\n";
+			LOG_INFO << "queue is full.";
 			break;
 		}
 	}
@@ -333,8 +333,7 @@ TEST_CASE("testing recv navigate") {
 TEST_CASE("testing stat output for navigate") {
 	string log_file;
 	string log_line;
-	char buf[64] = "";
-	snprintf(buf, sizeof(buf), "%d", LOOP);
+	string str = std::to_string(LOOP);
 	bool found = false;
 	sleep(1);
 	for (auto &p : fs::directory_iterator(zeg_config::get_instance().zeg_log_path)) {
@@ -343,7 +342,7 @@ TEST_CASE("testing stat output for navigate") {
 		REQUIRE(fs);
 		while (!fs.eof()) {
 			fs >> log_line;
-			if (log_line.find(buf) != string::npos) {
+			if (log_line.find(str) != string::npos) {
 				found = true;
 				break;
 			}
@@ -351,4 +350,28 @@ TEST_CASE("testing stat output for navigate") {
 		fs.close();
 	}
 	CHECK(true == found);
+}
+atomic<int>g_x;
+class my_job {
+public:
+	my_job(ThreadPool *thread_pool, promise<void>*waiter) : thread_pool(thread_pool), waiter(waiter) {
+	}
+	void operator () () {
+		++g_x;
+		waiter->set_value();
+	}
+public:
+	 ThreadPool *thread_pool;
+	 promise<void>*waiter;
+};
+TEST_CASE("testing thread pool") {
+	ThreadPool thread_pool;
+    promise<void>waiters[LOOP];
+    for(auto &waiter : waiters) {
+    	thread_pool.post(my_job(&thread_pool, &waiter));
+    }
+    for(auto& waiter : waiters) {
+    	waiter.get_future().wait();
+    }
+    CHECK(g_x.load() == LOOP);
 }
