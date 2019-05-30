@@ -16,7 +16,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-29                                                      *
+*  @date     2019-05-30                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -26,7 +26,8 @@
 *  2019/05/28 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*
 *  2019/05/29 | 1.0.0     |                | add base thread test            *
-*----------------------------------------------------------------------------*                                                                   *
+*----------------------------------------------------------------------------*
+*  2019/05/30 | 1.0.0     |                | add thread pool test            *                                                                   *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <stdio.h>
@@ -44,11 +45,13 @@
 #include "base_thread.hpp"
 #include "zeg_recv_navigate.hpp"
 #include "zeg_stat_output.hpp"
+#include "zeg_post_navigate.hpp"
 using namespace zeg_message_interface;
 using namespace zmq_self_agent;
 namespace fs = experimental::filesystem;
 static const int SIZE = 64;
 static const int LOOP = 800;
+static const int TEST_VALUE = 1000;
 class my_class {
 public:
 	my_class() {
@@ -62,7 +65,7 @@ public:
 };
 msgpack::sbuffer buffer;
 TEST_CASE("testing msg pack and unpack") {
-	int loop = 1000;
+	int loop = LOOP;
 	char buf[1024] = "";
 	for (int i = 0;i < loop;i++) {
 		my_class my_obj;
@@ -80,6 +83,13 @@ TEST_CASE("testing msg pack and unpack") {
 		CHECK(my_obj1.my_int == my_obj.my_int);
 		CHECK(my_obj1.my_string == my_obj.my_string);
 	}
+	const char *str = "hello world 123ABCD edf";
+	msgpack::unpacked msg;
+	msgpack::unpack(&msg, str, strlen(str));
+	msgpack::object obj = msg.get();
+	CHECK(false == obj.is_nil());
+	my_class my_obj;
+	CHECK_THROWS_AS(obj.convert(&my_obj), const exception&);
 }
 const char *g_server_address = "tcp://localhost:9141";
 const char *g_local_address = "tcp://*:9141";
@@ -174,7 +184,7 @@ TEST_CASE("testing zmq send and recv") {
 	}
 }
 TEST_CASE("testing znavigate_command pack and unpack") {
-	int loop = 1000;
+	int loop = LOOP;
 	int points = 3;
 	char buf[1024] = "";
 	for (int i = 0;i < loop;i++) {
@@ -182,7 +192,7 @@ TEST_CASE("testing znavigate_command pack and unpack") {
 		my_obj.task_id = i;
 		for (int i = 0;i < points;i++) {
 			my_obj.task_id = i;
-			zwaypoint way_point = {{{1000, 1000, 1000, 1000}, 1000}, {1000, 1000, 1000, 1000, 1000}};
+			zwaypoint way_point = {{{TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE}, TEST_VALUE}, {TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE}};
 			my_obj.waypoints_.emplace_back(way_point);
 		}
 		buffer.clear();
@@ -195,12 +205,12 @@ TEST_CASE("testing znavigate_command pack and unpack") {
 		obj.convert(&my_obj1);
 		CHECK(my_obj1.task_id == my_obj.task_id);
 		CHECK(my_obj1.waypoints_.size()== my_obj.waypoints_.size());
-		ztolerance t = {1000, 1000, 1000, 1000, 1000};
+		ztolerance t = {TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE};
 		for (size_t i = 0;i < my_obj1.waypoints_.size();i++) {
-			CHECK(1000 == my_obj1.waypoints_[i].tolerance_.x_thres);
-			CHECK(1000 == my_obj1.waypoints_[i].posetime_.time);
-			CHECK(1000 == my_obj1.waypoints_[i].posetime_.pose_.theta);
-			CHECK(1000 == my_obj1.waypoints_[i].posetime_.pose_.blief);
+			CHECK(TEST_VALUE == my_obj1.waypoints_[i].tolerance_.x_thres);
+			CHECK(TEST_VALUE == my_obj1.waypoints_[i].posetime_.time);
+			CHECK(TEST_VALUE == my_obj1.waypoints_[i].posetime_.pose_.theta);
+			CHECK(TEST_VALUE == my_obj1.waypoints_[i].posetime_.pose_.blief);
 		}
 	}
 }
@@ -360,7 +370,7 @@ public:
 		++g_x;
 		waiter->set_value();
 	}
-public:
+private:
 	 ThreadPool *thread_pool;
 	 promise<void>*waiter;
 };
@@ -374,4 +384,38 @@ TEST_CASE("testing thread pool") {
     	waiter.get_future().wait();
     }
     CHECK(g_x.load() == LOOP);
+}
+void clear_navigate_queue() {
+	string str;
+	while (zeg_config::get_instance().navigate_cmd_queue.size_approx() > 0) {
+		zeg_config::get_instance().navigate_cmd_queue.try_dequeue(str);
+	}
+}
+void put_navigate_cmd() {
+	int points = 3;
+	for (int i = 0;i < LOOP;i++) {
+		znavigate_command my_obj;
+		my_obj.task_id = i;
+		for (int i = 0;i < points;i++) {
+			my_obj.task_id = TEST_VALUE;
+			zwaypoint way_point = {{{TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE}, TEST_VALUE}, {TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE, TEST_VALUE}};
+			my_obj.waypoints_.emplace_back(way_point);
+		}
+		buffer.clear();
+		msgpack::pack(buffer, my_obj);
+		string str(buffer.data(), buffer.size());
+		zeg_config::get_instance().navigate_cmd_queue.enqueue(str);
+	}
+}
+TEST_CASE("testing post navigate") {
+	clear_navigate_queue();
+	put_navigate_cmd();
+	zeg_post_navigate obj;
+	int count = 0;
+	for (int i = 0;i < LOOP;i++) {
+		if (TEST_VALUE == obj.test_unpack_command()) {
+			++count;
+		}
+	}
+	CHECK(LOOP == count);
 }

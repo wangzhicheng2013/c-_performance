@@ -4,6 +4,8 @@ include_directories (
 	"../include/zmq"
 	"../include/nanolog"
 	"../include/thread_pool"
+	"../include/rest_rpc"
+	"../include/boost_1_69_0"
        	"../include/msgpack"
 )
 link_directories (${PROJECT_SOURCE_DIR}/libs)

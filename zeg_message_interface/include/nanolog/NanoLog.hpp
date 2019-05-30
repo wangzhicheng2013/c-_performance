@@ -836,10 +836,6 @@ namespace nanolog
 		{
 			string log_file_name = m_name;
 			log_file_name.append("_");
-			char date[64] = "";
-			get_date(date, sizeof(date));
-			log_file_name.append(date);
-			log_file_name.append("_");
 			log_file_name.append(std::to_string(m_file_number));
 			m_file_number = (m_file_number + 1) % MAX_LOG_FILES_COUNT;
 			return log_file_name;
