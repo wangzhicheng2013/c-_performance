@@ -1,10 +1,3 @@
-
-/*
- * unit_test.cpp
- *
- *  Created on: 2019年5月29日
- *      Author: root
- */
 /*****************************************************************************
 *  unit test source file                                                     *
 *  Copyright (C) 2019                                                        *
@@ -46,7 +39,6 @@
 #include "zeg_recv_navigate.hpp"
 #include "zeg_stat_output.hpp"
 #include "zeg_post_navigate.hpp"
-#include "zeg_mock_navigate_server.hpp"
 using namespace zeg_message_interface;
 using namespace zmq_self_agent;
 namespace fs = experimental::filesystem;

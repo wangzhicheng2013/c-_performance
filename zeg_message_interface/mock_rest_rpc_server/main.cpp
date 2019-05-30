@@ -27,7 +27,7 @@ using namespace zeg_message_interface;
 
 class zeg_mock_navigate_server {
 public:
-	uint64_t get_taskid(rpc_conn conn, const znavigate_command& cmd) {
+	uint64_t get_taskid(rpc_conn conn, const znavigate_command &cmd) {
 		return cmd.task_id;
 	}
 };
