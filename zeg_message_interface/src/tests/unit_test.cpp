@@ -46,6 +46,7 @@
 #include "zeg_recv_navigate.hpp"
 #include "zeg_stat_output.hpp"
 #include "zeg_post_navigate.hpp"
+#include "zeg_mock_navigate_server.hpp"
 using namespace zeg_message_interface;
 using namespace zmq_self_agent;
 namespace fs = experimental::filesystem;
@@ -89,7 +90,7 @@ TEST_CASE("testing msg pack and unpack") {
 	msgpack::object obj = msg.get();
 	CHECK(false == obj.is_nil());
 	my_class my_obj;
-	CHECK_THROWS_AS(obj.convert(&my_obj), const exception&);
+	CHECK_THROWS_AS(obj.convert(&my_obj), std::exception&);
 }
 const char *g_server_address = "tcp://localhost:9141";
 const char *g_local_address = "tcp://*:9141";
@@ -418,4 +419,9 @@ TEST_CASE("testing post navigate") {
 		}
 	}
 	CHECK(LOOP == count);
+}
+TEST_CASE("testing navigate rest rpc") {
+	zeg_post_navigate post_obj;
+	CHECK(true == post_obj.init_connect());
+	CHECK(TEST_VALUE == post_obj.test_get_taskid(TEST_VALUE));
 }

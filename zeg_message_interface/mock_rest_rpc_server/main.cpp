@@ -2,8 +2,8 @@
 *  zeg mock_navigate_server                                                  *
 *  Copyright (C) 2019                                                        *
 *                                                                            *
-*  @file     zeg_mock_navigate_server.hpp                                    *
-*  @brief    zeg mock navigate command server                                *
+*  @file    main.cpp                                                         *
+*  @brief   zeg mock navigate command server                                 *
 *  Details.                                                                  *
 *                                                                            *
 *  @author                                                                   *
@@ -19,21 +19,23 @@
 *  2019/05/30 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
-#ifndef SRC_ZEG_MOCK_NAVIGATE_SERVER_HPP_
-#define SRC_ZEG_MOCK_NAVIGATE_SERVER_HPP_
-#include "zeg_config.hpp"
+#include "zeg_data_define.h"
 #include "rpc_server.h"
-namespace zeg_message_interface {
 using namespace rest_rpc;
 using namespace rpc_service;
+using namespace zeg_message_interface;
 
 class zeg_mock_navigate_server {
 public:
 	uint64_t get_taskid(rpc_conn conn, const znavigate_command& cmd) {
 		return cmd.task_id;
 	}
-
 };
-}
+int main() {
+	zeg_mock_navigate_server obj;
+	rpc_server server(RPC_SERVER_PORT, thread::hardware_concurrency());
+	server.register_handler("get_taskid", &zeg_mock_navigate_server::get_taskid, &obj);
+	server.run();
 
-#endif /* SRC_ZEG_MOCK_NAVIGATE_SERVER_HPP_ */
+	return 0;
+}
