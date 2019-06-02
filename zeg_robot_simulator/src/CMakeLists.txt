@@ -1,0 +1,19 @@
+aux_source_directory (. SRC_LIST)
+include_directories (
+	"../include/"
+	"../include/doctest"
+)
+link_directories (${PROJECT_SOURCE_DIR}/libs)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread -std=c++17")
+add_executable (zeg_robot_monitor ${SRC_LIST})
+set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+target_link_libraries (zeg_robot_monitor stdc++fs)
+option(BUILD_TESTS "If enabled, compile the tests." ON)
+if(BUILD_TESTS)
+        enable_testing()
+        macro(add_doctest test_source test_name)
+        add_executable(${test_name} ${test_source})
+        add_test(${test_name} ${test_name})
+        endmacro(add_doctest)
+        add_subdirectory(tests)
+endif()
