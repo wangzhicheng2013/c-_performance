@@ -88,22 +88,20 @@ public:
 	}
 public:
 	static void split_to_set(const string &line, char split_char, set<string>&values) {
-		auto pos0 = 0, pos1 = 0;
-		size_t i = 0;
 		string value;
 		values.clear();
-    	for (;line[i];++i) {
-    		if (split_char == line[i]) {
-    			pos1 = i;
-    			value.assign(line, pos0, pos1);
-    			pos0 = pos1 + 1;
-    			values.insert(value);
+    	for (size_t i = 0;line[i];++i) {
+    		if (split_char != line[i]) {
+    			value += line[i];
+    			continue;
     		}
+    		values.insert(value);
+    		value.clear();
     	}
-    	int len = i - pos1;
-    	value.assign(line, pos0, len);
-    	values.insert(value);
-	}
+    	if (!value.empty()) {
+    		values.insert(value);
+    	}
+    }
 private:
 	inline bool get_fstream(const char *filepath, ifstream &fstream) {
 		if (nullptr == filepath) {

@@ -1,6 +1,7 @@
 aux_source_directory (. SRC_LIST)
 include_directories (
 	"../include/"
+	"../include/msgpack"
 	"../include/doctest"
 )
 link_directories (${PROJECT_SOURCE_DIR}/libs)
