@@ -10,7 +10,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-04                                                      *
+*  @date     2019-06-05                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -22,10 +22,13 @@
 *  2019/06/03 | 1.0.0     |                | Add config parser test case     *
 *----------------------------------------------------------------------------*
 *  2019/06/04 | 1.0.0     |                | Add get next pose test case     *
+*----------------------------------------------------------------------------*
+*  2019/06/05 | 1.0.0     |                | Add get pose trace test case    *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <iostream>
 #include <fstream>
+#include <random>
 #include <experimental/filesystem>
 #include "doctest.hpp"
 #include "config_parser.hpp"
@@ -208,4 +211,35 @@ TEST_CASE("testing rotate robot pose") {
 	CHECK(10 == pose_compute_obj.destination_pose_.y);
 	CHECK(10.90 == pose_compute_obj.destination_pose_.theta);
 	CHECK(1 == pose_compute_obj.speed_.vx);
+}
+TEST_CASE("testing merge vector") {
+	vector<int>v0{1, 2, 3};
+	vector<int>v1;
+	merge_vector(v0, v1);
+	CHECK(3 == v1.size());
+	merge_vector(v0, v1);
+	CHECK(6 == v1.size());
+}
+TEST_CASE("testing get pose trace with angle") {
+	pose_compute pose_compute_obj;
+	pose_compute_obj.msecs = 100;
+	pose_compute_obj.speed_ = {1, 0, 0.1};
+	const int n = 1000;
+	vector<robot_pose>pose_set;
+	vector<robot_pose>pose_trace;
+	robot_pose tmp;
+	default_random_engine e;
+	uniform_real_distribution<double>u(-M_PI_, M_PI_);
+	for (int i = 0;i < n;i++) {
+		robot_pose pose(i + 1, i * 2 + 1, u(e));
+		pose_set.emplace_back(pose);
+		tmp = pose;
+	}
+	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace));
+	REQUIRE(pose_trace.size() > 0);
+	bool r = (tmp == *(end(pose_trace) - 1));
+	CHECK(true == r);
+	for (auto &pose : pose_trace) {
+		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
+	}
 }

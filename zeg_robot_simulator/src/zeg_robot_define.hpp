@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-04                                                      *
+*  @date     2019-06-05                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -26,6 +26,7 @@
 #include <cmath>
 #include <vector>
 #include "msgpack.hpp"
+#include "common_utility.hpp"
 namespace zeg_robot_simulator {
 using namespace std;
 static const double M_EPS = 0.00000001;
@@ -33,7 +34,7 @@ static const double M_PI_ = 3.1415926535898;
 static const double DEG2RAD_ZEG = 0.017453292519943;
 template <typename T>
 inline bool equal(T x, T y) {
-        return fabs(x - y) < M_EPS;
+	return fabs(x - y) < M_EPS;
 }
 inline double deg2rad(double angle) {
 	return angle * DEG2RAD_ZEG;
@@ -56,9 +57,17 @@ struct robot_pose {
 		theta = other.theta;
 		return *this;
 	}
+	bool operator == (const robot_pose &other) {
+		return (x == other.x) && (y == other.y) && (theta == other.theta);
+	}
 	inline void normalize() {
 		theta = atan2(sin(theta), cos(theta));
     }
+	inline void set_zero() {
+		x = 0;
+		y = 0;
+		theta = 0;
+	}
     double x, y;
     double theta;
 	MSGPACK_DEFINE(x, y, theta);
@@ -116,13 +125,17 @@ class pose_compute {
 public:
 	pose_compute() {
 		msecs = 100;
+		theta = 0;
 	}
 	pose_compute(int msecs,
 			const robot_pose &cur_pose,
 			const robot_pose &destination_pose,
 			const robot_speed &speed) : msecs(msecs),
 					cur_pose_(cur_pose), destination_pose_(destination_pose), speed_(speed) {
+		theta = 0;
 	}
+	pose_compute(const pose_compute &) = delete;
+	pose_compute & operator = (const pose_compute &) = delete;
 	virtual ~pose_compute() = default;
 public:
 	void get_next_pose (robot_pose &next_pose) {
@@ -162,28 +175,33 @@ public:
 		}
 		return true;
 	}
-	bool get_pose_trace_with_angle(vector<robot_pose>&pose_trace) {
-		pose_trace.clear();
-		return true;
-	}
 	bool adjust_pose_angle() {
 		if (speed_.w <= 0) {
 			return false;
 		}
-		double normalized_value = normalize(destination_pose_.theta - cur_pose_.theta);
-		if (fabs(normalized_value) < speed_.w * msecs / 1000) {
-			cur_pose_.theta = destination_pose_.theta;
+		theta = direction(cur_pose_, destination_pose_);
+		double normalized_value = normalize(theta - cur_pose_.theta);
+		if (fabs(normalized_value) <= speed_.w * msecs / 1000) {
+			cur_pose_.theta = theta;
 			return false;
 		}
 		return true;
 	}
-	void rotate_robot_pose(vector<robot_pose>&pose_trace) {
-		pose_trace.clear();
-		robot_pose save_destination_pose = destination_pose_;
-		robot_speed save_speed = speed_;
+	inline void rotate_robot_adjust() {
 		destination_pose_.x = cur_pose_.x;
 		destination_pose_.y = cur_pose_.y;
+		destination_pose_.theta = theta;
 		speed_.vx = 0;
+	}
+	void rotate_robot_pose(vector<robot_pose>&pose_trace) {
+		pose_trace.clear();
+		if (false == adjust_pose_angle()) {
+			return;
+		}
+		double tmp = theta;
+		robot_pose save_destination_pose = destination_pose_;
+		robot_speed save_speed = speed_;
+		rotate_robot_adjust();
 		robot_pose next_pose;
 		do {
 			get_next_pose(next_pose);
@@ -192,9 +210,27 @@ public:
 		}while (true == adjust_pose_angle());
 		destination_pose_ = save_destination_pose;
 		speed_ = save_speed;
+		cur_pose_.theta = tmp;
+	}
+	bool get_pose_trace_with_angle(const vector<robot_pose>&pose_set, vector<robot_pose>&pose_trace) {
+		vector<robot_pose>pose_tmp;
+		pose_trace.clear();
+		cur_pose_.set_zero();
+		for (auto &pose : pose_set) {
+			destination_pose_ = pose;
+			rotate_robot_pose(pose_tmp);
+			merge_vector(pose_tmp, pose_trace);
+			if (false == get_pose_trace(pose_tmp)) {
+				return false;
+			}
+			merge_vector(pose_tmp, pose_trace);
+			pose_trace.emplace_back(destination_pose_);
+		}
+		return true;
 	}
 public:
 	int msecs;				// ms
+	double theta;
 	robot_pose cur_pose_;
 	robot_pose destination_pose_;
 	robot_speed speed_;
