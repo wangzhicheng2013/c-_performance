@@ -1,4 +1,3 @@
-
 /*****************************************************************************
 *  unit test source file                                                     *
 *  Copyright (C) 2019                                                        *
@@ -33,8 +32,13 @@
 #include "doctest.hpp"
 #include "config_parser.hpp"
 #include "zeg_robot_define.hpp"
+#include "zeg_config.hpp"
+#include "rpc_client.hpp"
+#include "codec.h"
 using namespace std;
 using namespace zeg_robot_simulator;
+using namespace rest_rpc;
+using namespace rest_rpc::rpc_service;
 namespace fs = std::experimental::filesystem;
 bool write_test_config_file(const char *filepath) {
 	fstream fs(filepath, ios::out);
@@ -242,4 +246,64 @@ TEST_CASE("testing get pose trace with angle") {
 	for (auto &pose : pose_trace) {
 		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
 	}
+}
+void start_server() {
+	run_program("./zeg_robot_monitor");
+}
+TEST_CASE("testing rest rpc get cur pose") {
+	thread th(start_server);
+	th.detach();
+	bool no_exception = true;
+    try {
+    	sleep(1);
+    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_PORT);
+    	bool r = client.connect();
+    	REQUIRE(true == r);
+        auto pose = client.call<robot_pose>("get_cur_pose");
+        CHECK(robot_pose(0, 0, 0) == pose);
+    }
+    catch (const std::exception& e) {
+    	cout << e.what() << std::endl;
+    	no_exception = false;
+    }
+    CHECK(true == no_exception);
+}
+TEST_CASE("testing rest rpc get pose trace") {
+	bool no_exception = true;
+    try {
+    	sleep(1);
+    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_PORT);
+    	bool r = client.connect();
+    	REQUIRE(true == r);
+
+    	const int n = 1000;
+    	vector<robot_pose>pose_set;
+    	robot_pose tmp;
+    	default_random_engine e;
+    	uniform_real_distribution<double>u(-M_PI_, M_PI_);
+    	for (int i = 0;i < n;i++) {
+    		robot_pose pose(i + 1, i * 2 + 1, u(e));
+    		pose_set.emplace_back(pose);
+    		tmp = pose;
+    	}
+        auto pose_trace = client.call<vector<robot_pose>>("get_pose_trace", pose_set);
+       	REQUIRE(pose_trace.size() > 0);
+       	r = (tmp == *(end(pose_trace) - 1));
+        CHECK(true == r);
+        for (auto &pose : pose_trace) {
+        	cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
+        }
+    }
+    catch (const std::exception& e) {
+    	cout << e.what() << std::endl;
+    	no_exception = false;
+    }
+    CHECK(true == no_exception);
+	kill_program("zeg_robot_monitor");
+}
+TEST_CASE("testing init conf") {
+	zeg_config::get_instance().init_conf();
+	CHECK(100 == zeg_config::get_instance().msecs);
+	bool r = (zeg_config::get_instance().speed_ == robot_speed{1, 0, 0.1});
+	CHECK(true == r);
 }

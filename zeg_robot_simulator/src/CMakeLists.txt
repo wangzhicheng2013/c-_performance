@@ -2,6 +2,8 @@ aux_source_directory (. SRC_LIST)
 include_directories (
 	"../include/"
 	"../include/msgpack"
+	"../include/rest_rpc"
+    "/opt/boost_1_69_0"
 	"../include/doctest"
 )
 link_directories (${PROJECT_SOURCE_DIR}/libs)

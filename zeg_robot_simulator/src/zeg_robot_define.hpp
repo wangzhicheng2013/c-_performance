@@ -18,7 +18,7 @@
 *----------------------------------------------------------------------------*
 *  2019/06/03 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*
-*  2019/06/04 | 1.0.0     |                | Add get_next_pose               *                                                            *
+*  2019/06/04 | 1.0.0     |                | Add get_next_pose               *
 *****************************************************************************/
 #ifndef SRC_ZEG_ROBOT_DEFINE_HPP_
 #define SRC_ZEG_ROBOT_DEFINE_HPP_
@@ -60,6 +60,9 @@ struct robot_pose {
 	bool operator == (const robot_pose &other) {
 		return (x == other.x) && (y == other.y) && (theta == other.theta);
 	}
+	friend bool operator == (const robot_pose &one, const robot_pose &other) {
+		return (one.x == other.x) && (one.y == other.y) && (one.theta == other.theta);
+	}
 	inline void normalize() {
 		theta = atan2(sin(theta), cos(theta));
     }
@@ -67,6 +70,11 @@ struct robot_pose {
 		x = 0;
 		y = 0;
 		theta = 0;
+	}
+	inline void set_pose(const robot_pose &pose) {
+		x = pose.x;
+		y = pose.y;
+		theta = pose.theta;
 	}
     double x, y;
     double theta;
@@ -114,6 +122,12 @@ struct robot_speed {
 		vy = other.vy;
 		w = other.w;
 		return *this;
+	}
+	bool operator == (const robot_speed &other) {
+		return vx == other.vx && vy == other.vy && w == other.w;
+	}
+	friend bool operator == (const robot_speed &one, const robot_speed &other) {
+		return one.vx == other.vx && one.vy == other.vy && one.w == other.w;
 	}
 	double vx, vy, w;
 	MSGPACK_DEFINE(vx, vy, w);
