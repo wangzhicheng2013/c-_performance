@@ -71,11 +71,6 @@ struct robot_pose {
 		y = 0;
 		theta = 0;
 	}
-	inline void set_pose(const robot_pose &pose) {
-		x = pose.x;
-		y = pose.y;
-		theta = pose.theta;
-	}
     double x, y;
     double theta;
 	MSGPACK_DEFINE(x, y, theta);
@@ -124,10 +119,10 @@ struct robot_speed {
 		return *this;
 	}
 	bool operator == (const robot_speed &other) {
-		return vx == other.vx && vy == other.vy && w == other.w;
+		return (vx == other.vx) && (vy == other.vy) && (w == other.w);
 	}
 	friend bool operator == (const robot_speed &one, const robot_speed &other) {
-		return one.vx == other.vx && one.vy == other.vy && one.w == other.w;
+		return (one.vx == other.vx) && (one.vy == other.vy) && (one.w == other.w);
 	}
 	double vx, vy, w;
 	MSGPACK_DEFINE(vx, vy, w);
@@ -229,7 +224,6 @@ public:
 	bool get_pose_trace_with_angle(const vector<robot_pose>&pose_set, vector<robot_pose>&pose_trace) {
 		vector<robot_pose>pose_tmp;
 		pose_trace.clear();
-		cur_pose_.set_zero();
 		for (auto &pose : pose_set) {
 			destination_pose_ = pose;
 			rotate_robot_pose(pose_tmp);

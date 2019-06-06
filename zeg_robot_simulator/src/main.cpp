@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-05                                                      *
+*  @date     2019-06-06                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -17,6 +17,8 @@
 *  <Date>     | <Version> | <Author>       | <Description>                   *
 *----------------------------------------------------------------------------*
 *  2019/06/03 | 1.0.0     |                | Create file                     *
+*----------------------------------------------------------------------------*
+*  2019/06/06 | 1.0.0     |                | Add get robot msecs             *
 *****************************************************************************/
 #include "zeg_robot_define.hpp"
 #include "zeg_config.hpp"
@@ -27,6 +29,9 @@ using namespace zeg_robot_simulator;
 pose_compute pose_compute_obj;
 const robot_pose &get_cur_pose(rpc_conn conn) {
 	return pose_compute_obj.cur_pose_;
+}
+int get_robot_msecs(rpc_conn conn) {
+	return pose_compute_obj.msecs;
 }
 vector<robot_pose> get_pose_trace(rpc_conn conn, const vector<robot_pose>&pose_set) {
 	vector<robot_pose>pose_trace;
@@ -40,6 +45,7 @@ int main() {
 	pose_compute_obj.speed_ = {1, 0, 0.1};
 	rpc_server server(zeg_config::get_instance().RPC_SERVER_PORT, thread::hardware_concurrency());
 	server.register_handler("get_cur_pose", get_cur_pose);
+	server.register_handler("get_robot_msecs", get_robot_msecs);
 	server.register_handler("get_pose_trace", get_pose_trace);
 	server.run();
 

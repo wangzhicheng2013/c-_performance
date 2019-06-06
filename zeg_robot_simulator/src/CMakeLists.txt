@@ -3,11 +3,11 @@ include_directories (
 	"../include/"
 	"../include/msgpack"
 	"../include/rest_rpc"
-    "/opt/boost_1_69_0"
+	"/opt/boost_1_69_0"
 	"../include/doctest"
 )
 link_directories (${PROJECT_SOURCE_DIR}/libs)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ltcmalloc -pthread -std=c++17")
 add_executable (zeg_robot_monitor ${SRC_LIST})
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 target_link_libraries (zeg_robot_monitor stdc++fs)

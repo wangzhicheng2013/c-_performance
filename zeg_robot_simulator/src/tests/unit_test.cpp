@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-05                                                      *
+*  @date     2019-06-06                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -293,6 +293,8 @@ TEST_CASE("testing rest rpc get pose trace") {
         for (auto &pose : pose_trace) {
         	cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
         }
+        auto msecs = client.call<int>("get_robot_msecs");
+        CHECK(msecs == zeg_config::get_instance().msecs);
     }
     catch (const std::exception& e) {
     	cout << e.what() << std::endl;
@@ -305,5 +307,7 @@ TEST_CASE("testing init conf") {
 	zeg_config::get_instance().init_conf();
 	CHECK(100 == zeg_config::get_instance().msecs);
 	bool r = (zeg_config::get_instance().speed_ == robot_speed{1, 0, 0.1});
+	CHECK(true == r);
+	r = (zeg_config::get_instance().cur_pose_ == robot_pose{0, 0, 0});
 	CHECK(true == r);
 }

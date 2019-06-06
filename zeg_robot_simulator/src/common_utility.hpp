@@ -36,7 +36,7 @@ void merge_vector(const vector<T>&v0, vector<T>&v1) {
 	});
 }
 inline void run_program(const char* path) {
-	system(path);
+	cout << system(path) << endl;
     usleep(5000);
 }
 void kill_program(const char* program_name) {
@@ -53,10 +53,8 @@ void kill_program(const char* program_name) {
 	pclose(fp);
 	snprintf(cmd, sizeof(cmd), "kill -9  %s", buf);
 	cout << cmd << endl;
-	system(cmd);
+	cout << system(cmd) << endl;
 	usleep(5000);
 }
-
-
 
 #endif /* SRC_COMMON_UTILITY_HPP_ */
