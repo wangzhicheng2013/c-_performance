@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-30                                                      *
+*  @date     2019-06-06                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -20,7 +20,9 @@
 *----------------------------------------------------------------------------*
 *  2019/05/29 | 1.0.0     |                | add base thread test            *
 *----------------------------------------------------------------------------*
-*  2019/05/30 | 1.0.0     |                | add thread pool test            *                                                                   *
+*  2019/05/30 | 1.0.0     |                | add thread pool test            *
+*----------------------------------------------------------------------------*
+*  2019/06/06 | 1.0.0     |                | add navigate cmd unpack test    *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <stdio.h>
@@ -416,4 +418,25 @@ TEST_CASE("testing navigate rest rpc") {
 	zeg_post_navigate post_obj;
 	CHECK(true == post_obj.init_connect());
 	CHECK(TEST_VALUE == post_obj.test_get_taskid(TEST_VALUE));
+}
+TEST_CASE("testing unpack zeg robot navigate command") {
+	zeg_robot_point p0{1, 1};
+	zeg_robot_point p1{10, 10};
+	zeg_robot_navigate_command cmd;
+	cmd.task_id = 111;
+	cmd.points_.emplace_back(p0);
+	cmd.points_.emplace_back(p1);
+	buffer.clear();
+	msgpack::pack(buffer, cmd);
+
+	zeg_robot_navigate_command cmd1 = {0};
+	string str(buffer.data(), buffer.size());
+	zeg_post_navigate zeg_post_navigate_obj;
+	zeg_post_navigate_obj.unpack_command(str, cmd1);
+	CHECK(111 == cmd1.task_id);
+	REQUIRE(2 == cmd1.points_.size());
+	CHECK(1 == cmd1.points_[0].x);
+	CHECK(1 == cmd1.points_[0].y);
+	CHECK(10 == cmd1.points_[1].x);
+	CHECK(10 == cmd1.points_[1].y);
 }

@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-30                                                      *
+*  @date     2019-06-06                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -17,6 +17,8 @@
 *  <Date>     | <Version> | <Author>       | <Description>                   *
 *----------------------------------------------------------------------------*
 *  2019/05/30 | 1.0.0     |                | Create file                     *
+* ---------------------------------------------------------------------------*
+*  2019/06/06 | 1.0.0     |                | Add call rest rpc               *
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
 #ifndef SRC_ZEG_POST_NAVIGATE_HPP_
@@ -32,6 +34,9 @@ using namespace rest_rpc::rpc_service;
 
 class zeg_post_navigate : public base_thread {
 public:
+	bool init() {
+		return init_connect();
+	}
 	inline bool init_connect() {
 		return client.connect(RPC_SERVER_IP, RPC_SERVER_PORT, 5);
 	}
@@ -40,13 +45,33 @@ protected:
 		string cmd_str;
 		while (true) {
 			zeg_config::get_instance().navigate_cmd_queue.wait_dequeue(cmd_str);
-			znavigate_command cmd = {0};
+			zeg_robot_navigate_command cmd = {0};
 			if (false == unpack_command(cmd_str, cmd)) {
 				continue;
 			}
-			auto taskid = client.call<uint64_t>("get_taskid", cmd);
-			LOG_INFO << "get taskid from rest rpc server = " << taskid;
+			cout << "task id = " << cmd.task_id << endl;
+			cout << "pose count = " << cmd.points_.size() << endl;
+			for (auto &pose : cmd.points_) {
+				cout << "(" << pose.x << "," << pose.y << ")" << endl;
+			}
+			//auto taskid = client.call<uint64_t>("get_taskid", cmd);
+			//LOG_INFO << "get taskid from rest rpc server = " << taskid;
 		}
+	}
+public:
+	bool unpack_command(const string &cmd_str, zeg_robot_navigate_command &cmd) {
+		msgpack::unpacked msg;
+		msgpack::unpack(&msg, cmd_str.c_str(), cmd_str.size());
+		msgpack::object obj = msg.get();
+		try {
+			obj.convert(&cmd);
+		}
+		catch (std::exception &e) {
+			LOG_CRIT << e.what();
+			return false;
+		}
+		LOG_INFO << "navigate command taskid = " << cmd.task_id;
+		return true;
 	}
 private:
 	bool unpack_command(const string &cmd_str, znavigate_command &cmd) {

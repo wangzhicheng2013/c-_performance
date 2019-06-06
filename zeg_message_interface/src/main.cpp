@@ -21,14 +21,17 @@
 *  2019/05/28 | 1.0.0     |                | delete reluctant variables
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
-#include "zmq_agent.hpp"
-#include "msgpack.hpp"
 #include <string.h>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <chrono>
+#include "zmq_agent.hpp"
+#include "zeg_recv_navigate.hpp"
+#include "zeg_stat_output.hpp"
+#include "zeg_post_navigate.hpp"
 using namespace zmq_self_agent;
+using namespace zeg_message_interface;
 static const int SIZE = 1024;
 static const int LOOP = 100;
 const char *g_server_address = "tcp://192.168.4.6:9141";
@@ -116,15 +119,39 @@ bool recv_thread() {
 	zmq_term(context);
 	return true;
 }
+zeg_recv_navigate zeg_recv_navigate_thread;
+zeg_stat_output zeg_stat_output_thread;
+zeg_post_navigate zeg_post_navigate_thread;
+bool start_thread() {
+	if (false == zeg_recv_navigate_thread.init()) {
+		return false;
+	}
+	if (false == zeg_post_navigate_thread.init()) {
+		return false;
+	}
+	zeg_recv_navigate_thread.run();
+	zeg_stat_output_thread.run();
+	zeg_post_navigate_thread.run();
+	return true;
+}
+void join_thread() {
+	zeg_recv_navigate_thread.join();
+	zeg_stat_output_thread.join();
+	zeg_post_navigate_thread.join();
+}
 int main() {
-	thread th0(send_thread);
+	/*thread th0(send_thread);
 	thread th1(recv_thread);
 	if (th0.joinable()) {
 		th0.join();
 	}
 	if (th1.joinable()) {
 		th1.join();
+	}*/
+	if (false == start_thread()) {
+		return -1;
 	}
+	join_thread();
 	return 0;
 }
 

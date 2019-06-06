@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-30                                                      *
+*  @date     2019-06-06                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -20,7 +20,9 @@
 *----------------------------------------------------------------------------*
 *  2019/05/27 | 1.0.0     |                | Add command type                *
 *----------------------------------------------------------------------------*
-*  2019/05/30 | 1.0.0     |                | Add server port                 *                                                                   *
+*  2019/05/30 | 1.0.0     |                | Add server port                 *
+*----------------------------------------------------------------------------*
+*  2019/06/06 | 1.0.0     |                | Add new navigate command        *
 *****************************************************************************/
 #ifndef SRC_ZEG_DATA_DEFINE_H_
 #define SRC_ZEG_DATA_DEFINE_H_
@@ -65,6 +67,16 @@ typedef struct znavigate_command {
 	vector<zwaypoint>waypoints_;
 	MSGPACK_DEFINE(task_id, waypoints_);
 }znavigate_command;
+/***********interactive with scheduler server******************/
+typedef struct zeg_robot_point {
+	double x, y;
+	MSGPACK_DEFINE(x, y);
+}zeg_robot_point;
+typedef struct zeg_robot_navigate_command {
+	uint64_t task_id;
+	vector<zeg_robot_point>points_;
+	MSGPACK_DEFINE(task_id, points_);
+}zeg_robot_navigate_command;
 }
 
 #endif /* SRC_ZEG_DATA_DEFINE_H_ */
