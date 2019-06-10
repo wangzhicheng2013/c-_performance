@@ -22,11 +22,19 @@
 *****************************************************************************/
 #include "zeg_robot_define.hpp"
 #include "zeg_config.hpp"
+#include "zeg_data_define.h"
 #include "rpc_server.h"
 using namespace rest_rpc;
 using namespace rpc_service;
 using namespace zeg_robot_simulator;
+using namespace zeg_message_interface;
 pose_compute pose_compute_obj;
+class zeg_mock_navigate_server {
+public:
+        uint64_t get_taskid(rpc_conn conn, const znavigate_command &cmd) {
+                return cmd.task_id;
+        }
+};
 const robot_pose &get_cur_pose(rpc_conn conn) {
 	return pose_compute_obj.cur_pose_;
 }
@@ -47,6 +55,8 @@ int main() {
 	server.register_handler("get_cur_pose", get_cur_pose);
 	server.register_handler("get_robot_msecs", get_robot_msecs);
 	server.register_handler("get_pose_trace", get_pose_trace);
+	zeg_mock_navigate_server obj;
+	server.register_handler("get_taskid", &zeg_mock_navigate_server::get_taskid, &obj);
 	server.run();
 
 	return 0;

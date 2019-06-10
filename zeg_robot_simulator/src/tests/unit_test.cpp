@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-06                                                      *
+*  @date     2019-06-10                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -23,6 +23,8 @@
 *  2019/06/04 | 1.0.0     |                | Add get next pose test case     *
 *----------------------------------------------------------------------------*
 *  2019/06/05 | 1.0.0     |                | Add get pose trace test case    *
+*----------------------------------------------------------------------------*
+*  2019/06/10 | 1.0.0     |                | Add get pose trace test case    *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <iostream>
@@ -236,6 +238,52 @@ TEST_CASE("testing get pose trace with angle") {
 	uniform_real_distribution<double>u(-M_PI_, M_PI_);
 	for (int i = 0;i < n;i++) {
 		robot_pose pose(i + 1, i * 2 + 1, u(e));
+		pose_set.emplace_back(pose);
+		tmp = pose;
+	}
+	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace));
+	REQUIRE(pose_trace.size() > 0);
+	bool r = (tmp == *(end(pose_trace) - 1));
+	CHECK(true == r);
+	for (auto &pose : pose_trace) {
+		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
+	}
+}
+TEST_CASE("testing get pose trace with angle1") {
+	pose_compute pose_compute_obj;
+	pose_compute_obj.msecs = 100;
+	pose_compute_obj.speed_ = {1, 0, 0.1};
+	const int n = 1000;
+	vector<robot_pose>pose_set;
+	vector<robot_pose>pose_trace;
+	robot_pose tmp;
+	default_random_engine e;
+	uniform_real_distribution<double>u(-100, 200);
+	for (int i = 0;i < n;i++) {
+		robot_pose pose(3 * i + 2 * i + 1.90 / (2 * i + i - 6 * i + 1), 2 * i - 1 + 1.0 * i / 10.1, 0);
+		pose_set.emplace_back(pose);
+		tmp = pose;
+	}
+	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace));
+	REQUIRE(pose_trace.size() > 0);
+	bool r = (tmp == *(end(pose_trace) - 1));
+	CHECK(true == r);
+	for (auto &pose : pose_trace) {
+		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
+	}
+}
+TEST_CASE("testing get pose trace with angle2") {
+	pose_compute pose_compute_obj;
+	pose_compute_obj.msecs = 100;
+	pose_compute_obj.speed_ = {1, 0, 0.1};
+	const int n = 1000;
+	vector<robot_pose>pose_set;
+	vector<robot_pose>pose_trace;
+	robot_pose tmp;
+	default_random_engine e;
+	uniform_real_distribution<double>u(-3.1415, 3.1890);
+	for (int i = 0;i < n;i++) {
+		robot_pose pose(3 * i + 2 * i + 1.90 / (2 * i + i - 6 * i + 1), 3 * i + 2 * i + 1.90 / (2 * i + i - 6 * i + 1), u(e));
 		pose_set.emplace_back(pose);
 		tmp = pose;
 	}
