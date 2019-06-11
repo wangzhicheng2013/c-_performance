@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-10                                                      *
+*  @date     2019-06-11                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -33,7 +33,7 @@
 #include <experimental/filesystem>
 #include "doctest.hpp"
 #include "config_parser.hpp"
-#include "zeg_robot_define.hpp"
+#include "zeg_pose_compute.hpp"
 #include "zeg_config.hpp"
 #include "rpc_client.hpp"
 #include "codec.h"
@@ -226,11 +226,11 @@ TEST_CASE("testing merge vector") {
 	merge_vector(v0, v1);
 	CHECK(6 == v1.size());
 }
+const int n = 2000;
 TEST_CASE("testing get pose trace with angle") {
 	pose_compute pose_compute_obj;
 	pose_compute_obj.msecs = 100;
 	pose_compute_obj.speed_ = {1, 0, 0.1};
-	const int n = 1000;
 	vector<robot_pose>pose_set;
 	vector<robot_pose>pose_trace;
 	robot_pose tmp;
@@ -245,15 +245,11 @@ TEST_CASE("testing get pose trace with angle") {
 	REQUIRE(pose_trace.size() > 0);
 	bool r = (tmp == *(end(pose_trace) - 1));
 	CHECK(true == r);
-	for (auto &pose : pose_trace) {
-		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
-	}
 }
 TEST_CASE("testing get pose trace with angle1") {
 	pose_compute pose_compute_obj;
 	pose_compute_obj.msecs = 100;
 	pose_compute_obj.speed_ = {1, 0, 0.1};
-	const int n = 1000;
 	vector<robot_pose>pose_set;
 	vector<robot_pose>pose_trace;
 	robot_pose tmp;
@@ -268,15 +264,11 @@ TEST_CASE("testing get pose trace with angle1") {
 	REQUIRE(pose_trace.size() > 0);
 	bool r = (tmp == *(end(pose_trace) - 1));
 	CHECK(true == r);
-	for (auto &pose : pose_trace) {
-		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
-	}
 }
 TEST_CASE("testing get pose trace with angle2") {
 	pose_compute pose_compute_obj;
 	pose_compute_obj.msecs = 100;
 	pose_compute_obj.speed_ = {1, 0, 0.1};
-	const int n = 1000;
 	vector<robot_pose>pose_set;
 	vector<robot_pose>pose_trace;
 	robot_pose tmp;
@@ -291,12 +283,11 @@ TEST_CASE("testing get pose trace with angle2") {
 	REQUIRE(pose_trace.size() > 0);
 	bool r = (tmp == *(end(pose_trace) - 1));
 	CHECK(true == r);
-	for (auto &pose : pose_trace) {
-		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
-	}
 }
+static const char *ROBOT_SIMULATOR_PATH = "/opt/zeg_robot_simulator/bin/zeg_robot_simulator";
+static const char *ROBOT_SIMULATOR_NAME = "zeg_robot_simulator";
 void start_server() {
-	run_program("./zeg_robot_monitor");
+	run_program(ROBOT_SIMULATOR_PATH);
 }
 TEST_CASE("testing rest rpc get cur pose") {
 	thread th(start_server);
@@ -323,8 +314,6 @@ TEST_CASE("testing rest rpc get pose trace") {
     	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_PORT);
     	bool r = client.connect();
     	REQUIRE(true == r);
-
-    	const int n = 1000;
     	vector<robot_pose>pose_set;
     	robot_pose tmp;
     	default_random_engine e;
@@ -349,7 +338,7 @@ TEST_CASE("testing rest rpc get pose trace") {
     	no_exception = false;
     }
     CHECK(true == no_exception);
-	kill_program("zeg_robot_monitor");
+	kill_program(ROBOT_SIMULATOR_NAME);
 }
 TEST_CASE("testing init conf") {
 	zeg_config::get_instance().init_conf();

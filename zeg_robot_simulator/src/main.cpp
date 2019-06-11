@@ -20,7 +20,8 @@
 *----------------------------------------------------------------------------*
 *  2019/06/06 | 1.0.0     |                | Add get robot msecs             *
 *****************************************************************************/
-#include "zeg_robot_define.hpp"
+#include <mutex>
+#include "zeg_pose_compute.hpp"
 #include "zeg_config.hpp"
 #include "zeg_data_define.h"
 #include "rpc_server.h"
@@ -29,11 +30,12 @@ using namespace rpc_service;
 using namespace zeg_robot_simulator;
 using namespace zeg_message_interface;
 pose_compute pose_compute_obj;
+mutex global_lock;
 class zeg_mock_navigate_server {
 public:
-        uint64_t get_taskid(rpc_conn conn, const znavigate_command &cmd) {
-                return cmd.task_id;
-        }
+	uint64_t get_taskid(rpc_conn conn, const znavigate_command &cmd) {
+		return cmd.task_id;
+	}
 };
 const robot_pose &get_cur_pose(rpc_conn conn) {
 	return pose_compute_obj.cur_pose_;
@@ -43,6 +45,7 @@ int get_robot_msecs(rpc_conn conn) {
 }
 vector<robot_pose> get_pose_trace(rpc_conn conn, const vector<robot_pose>&pose_set) {
 	vector<robot_pose>pose_trace;
+	lock_guard<mutex>lk(global_lock);
 	if (false == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace)) {
 		pose_trace.clear();
 	}
