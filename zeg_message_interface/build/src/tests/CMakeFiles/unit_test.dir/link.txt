@@ -1,1 +1,0 @@
-/usr/bin/c++   -g -pthread -std=c++17   CMakeFiles/unit_test.dir/unit_test.cpp.o  -o ../../../bin/unit_test  -L/opt/c++/c-_performance/zeg_message_interface/libs -Wl,-rpath,/opt/c++/c-_performance/zeg_message_interface/libs -lzmq -lstdc++fs 
