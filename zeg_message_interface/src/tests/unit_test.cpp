@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-06                                                      *
+*  @date     2019-06-10                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -23,6 +23,8 @@
 *  2019/05/30 | 1.0.0     |                | add thread pool test            *
 *----------------------------------------------------------------------------*
 *  2019/06/06 | 1.0.0     |                | add navigate cmd unpack test    *
+*----------------------------------------------------------------------------*
+*  2019/06/10 | 1.0.0     |                | add call get_pose_trace test    *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <stdio.h>
@@ -32,6 +34,7 @@
 #include <queue>
 #include <thread>
 #include <chrono>
+#include <random>
 #include <experimental/filesystem>
 #include "doctest.hpp"
 #include "zmq_agent.hpp"
@@ -41,6 +44,7 @@
 #include "zeg_recv_navigate.hpp"
 #include "zeg_stat_output.hpp"
 #include "zeg_post_navigate.hpp"
+#include "zeg_send_simulator.hpp"
 using namespace zeg_message_interface;
 using namespace zmq_self_agent;
 namespace fs = experimental::filesystem;
@@ -414,8 +418,15 @@ TEST_CASE("testing post navigate") {
 	}
 	CHECK(LOOP == count);
 }
+static const char *ROBOT_SIMULATOR_PATH = "/opt/zeg_robot_simulator/bin/zeg_robot_simulator";
+void start_server() {
+	run_program(ROBOT_SIMULATOR_PATH);
+}
 TEST_CASE("testing navigate rest rpc") {
+	thread th(start_server);
+	th.detach();
 	zeg_post_navigate post_obj;
+	sleep(1);
 	CHECK(true == post_obj.init_connect());
 	CHECK(TEST_VALUE == post_obj.test_get_taskid(TEST_VALUE));
 }
@@ -439,4 +450,75 @@ TEST_CASE("testing unpack zeg robot navigate command") {
 	CHECK(1 == cmd1.points_[0].y);
 	CHECK(10 == cmd1.points_[1].x);
 	CHECK(10 == cmd1.points_[1].y);
+}
+TEST_CASE("testing call simulator get pose trace") {
+	sleep(1);
+	zeg_robot_navigate_command cmd;
+	vector<robot_pose>pose_trace;
+	cmd.task_id = 10081;
+	const int n = 1000;
+	for (int i = 0;i < n;i++) {
+		zeg_robot_point p;
+		p.x = i + 1;
+		p.y = i * 2 + 1;
+		cmd.points_.emplace_back(p);
+	}
+	cmd.points_.clear();
+	zeg_robot_point p;
+	p.x = 1;
+	p.y = 1;
+	cmd.points_.emplace_back(p);
+	p.x = 1;
+	p.y = 2;
+	cmd.points_.emplace_back(p);
+	p.x = 2;
+	p.y = 2;
+	cmd.points_.emplace_back(p);
+
+	zeg_post_navigate post_obj;
+	CHECK(true == post_obj.init());
+	CHECK(true == post_obj.call_simulator_get_pose_trace(cmd, pose_trace));
+	for (auto &pose : pose_trace) {
+		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
+	}
+}
+TEST_CASE("testing enqueue simulator pose trace") {
+	sleep(1);
+	zeg_robot_navigate_command cmd;
+	vector<robot_pose>pose_trace;
+	cmd.task_id = 20081;
+	const int n = 1000;
+	for (int i = 0;i < n;i++) {
+		zeg_robot_point p;
+		p.x = i + 1.0 / 8.90 + i * 4.892 / 2.11;
+		p.y = i * 2 + 1 + i * i / 901.1;
+		cmd.points_.emplace_back(p);
+	}
+	zeg_post_navigate post_obj;
+	CHECK(true == post_obj.init());
+	post_obj.client_.call<void>("set_cur_pose");
+	post_obj.enqueue_simulator_pose_trace(cmd);
+	CHECK(zeg_config::get_instance().simulator_pose_queue.size_approx() > 0);
+	robot_pose pose;
+	while (true == zeg_config::get_instance().simulator_pose_queue.try_dequeue(pose)) {
+		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
+	}
+	kill_program("zeg_robot_simulator");
+}
+TEST_CASE("testing init conf") {
+	zeg_config::get_instance().init_conf();
+	CHECK(false == zeg_config::get_instance().simulator_upload_address.empty());
+	cout << zeg_config::get_instance().simulator_upload_address << endl;
+}
+TEST_CASE("testing pack robot pose") {
+	robot_pose pose = {10, 1000, 12};
+	zeg_send_simulator zeg_send_simulator_obj;
+	zeg_send_simulator_obj.pack_robot_pose(pose);
+
+	msgpack::unpacked msg;
+	msgpack::unpack(&msg, zeg_send_simulator_obj.buffer.data(), zeg_send_simulator_obj.buffer.size());
+	msgpack::object obj = msg.get();
+	robot_pose pose1;
+	CHECK_NOTHROW(obj.convert(&pose1));
+	CHECK(pose == pose1);
 }

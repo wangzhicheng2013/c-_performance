@@ -40,12 +40,19 @@ public:
 const robot_pose &get_cur_pose(rpc_conn conn) {
 	return pose_compute_obj.cur_pose_;
 }
+void set_cur_pose(rpc_conn conn) {
+	lock_guard<mutex>lk(global_lock);
+	pose_compute_obj.cur_pose_ = zeg_config::get_instance().cur_pose_;
+}
 int get_robot_msecs(rpc_conn conn) {
 	return pose_compute_obj.msecs;
 }
 vector<robot_pose> get_pose_trace(rpc_conn conn, const vector<robot_pose>&pose_set) {
 	vector<robot_pose>pose_trace;
 	lock_guard<mutex>lk(global_lock);
+	/*for (auto &e : pose_set) {
+		cout << e.x << " " << e.y << " " << e.theta << endl;
+	}*/
 	if (false == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace)) {
 		pose_trace.clear();
 	}
@@ -56,6 +63,7 @@ int main() {
 	pose_compute_obj.speed_ = {1, 0, 0.1};
 	rpc_server server(zeg_config::get_instance().RPC_SERVER_PORT, thread::hardware_concurrency());
 	server.register_handler("get_cur_pose", get_cur_pose);
+	server.register_handler("set_cur_pose", set_cur_pose);
 	server.register_handler("get_robot_msecs", get_robot_msecs);
 	server.register_handler("get_pose_trace", get_pose_trace);
 	zeg_mock_navigate_server obj;

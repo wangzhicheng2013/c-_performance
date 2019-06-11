@@ -44,7 +44,7 @@ public:
 		vector<string>values{""};
 		config_parser::config_parser::get_instance().get_value("", "msecs", values);
 		msecs = atoi(values[0].c_str());
-		cheek_msecs();
+		check_msecs();
 		config_parser::config_parser::get_instance().get_value("speed", "vx", values);
 		speed_.vx = atof(values[0].c_str());
 		config_parser::config_parser::get_instance().get_value("speed", "vy", values);
@@ -60,7 +60,7 @@ public:
 		cur_pose_.theta = atof(values[0].c_str());
 	}
 private:
-	inline void cheek_msecs() {
+	inline void check_msecs() {
 		if (msecs <= 0 || msecs > 10000) {
 			msecs = 100;
 		}

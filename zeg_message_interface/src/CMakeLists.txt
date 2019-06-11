@@ -6,7 +6,8 @@ include_directories (
 	"../include/thread_pool"
 	"../include/rest_rpc"
 	"/opt/boost_1_69_0"
-       	"../include/msgpack"
+	"../include/msgpack"
+	"../include"
 )
 link_directories (${PROJECT_SOURCE_DIR}/libs)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ltcmalloc -pthread -std=c++17")

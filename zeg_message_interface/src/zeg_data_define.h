@@ -38,10 +38,10 @@ enum {
 static const int RPC_SERVER_PORT = 9000;
 static const char *RPC_SERVER_IP = "127.0.0.1";
 typedef struct zpos {
-    int x;
-    int y;
-    int theta;
-    int blief;
+    double x;
+    double y;
+    double theta;
+    double blief;
 	MSGPACK_DEFINE(x, y, theta, blief);
 }zpos;
 typedef struct zposetime {

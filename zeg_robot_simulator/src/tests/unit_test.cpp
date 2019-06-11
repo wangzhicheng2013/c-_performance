@@ -103,7 +103,7 @@ TEST_CASE("testing pose compute0") {
 	pose_compute pose_compute_obj;
 	pose_compute_obj.msecs = 1000;
 	pose_compute_obj.cur_pose_ = {10, 10, 0.1};
-	pose_compute_obj.speed_ = {1, 0, 10};
+	pose_compute_obj.speed_ = {1, 0, 1.5};
 	robot_pose next_pose;
 	pose_compute_obj.get_next_pose(next_pose);
 	CHECK(next_pose.x > 10);
@@ -230,21 +230,19 @@ const int n = 2000;
 TEST_CASE("testing get pose trace with angle") {
 	pose_compute pose_compute_obj;
 	pose_compute_obj.msecs = 100;
-	pose_compute_obj.speed_ = {1, 0, 0.1};
-	vector<robot_pose>pose_set;
+	pose_compute_obj.speed_ = {1, 0, 36};
+	pose_compute_obj.cur_pose_ = {0, 0, 0};
+	vector<robot_pose>pose_set{{1, 1, 1.57}};
+	//vector<robot_pose>pose_set{{0, 1, 1.57}, {1, 1, 3.14}, {10, 1, 3.14}, {10, 1, 33.14}};
 	vector<robot_pose>pose_trace;
-	robot_pose tmp;
-	default_random_engine e;
-	uniform_real_distribution<double>u(-M_PI_, M_PI_);
-	for (int i = 0;i < n;i++) {
-		robot_pose pose(i + 1, i * 2 + 1, u(e));
-		pose_set.emplace_back(pose);
-		tmp = pose;
-	}
 	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace));
-	REQUIRE(pose_trace.size() > 0);
-	bool r = (tmp == *(end(pose_trace) - 1));
-	CHECK(true == r);
+	cout << "==========================" << endl;
+	cout << "pose trace size = " << pose_trace.size() << endl;
+	for (auto &e : pose_trace) {
+		cout << e.x << " " << e.y << " " << e.theta << endl;
+	}
+	cout << "==========================" << endl;
+
 }
 TEST_CASE("testing get pose trace with angle1") {
 	pose_compute pose_compute_obj;
@@ -284,6 +282,22 @@ TEST_CASE("testing get pose trace with angle2") {
 	bool r = (tmp == *(end(pose_trace) - 1));
 	CHECK(true == r);
 }
+TEST_CASE("testing get pose trace with angle3") {
+	pose_compute pose_compute_obj;
+	pose_compute_obj.msecs = 100;
+	pose_compute_obj.speed_ = {1, 0, 36};
+	pose_compute_obj.cur_pose_ = {0, 0, 0};
+	vector<robot_pose>pose_set{{0, 1, 1.57}, {1, 1, 3.14}};
+	vector<robot_pose>pose_trace;
+	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace));
+	cout << "==========================" << endl;
+	cout << pose_trace.size() << endl;
+	for (auto &e : pose_trace) {
+		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
+	}
+	cout << "==========================" << endl;
+}
+
 static const char *ROBOT_SIMULATOR_PATH = "/opt/zeg_robot_simulator/bin/zeg_robot_simulator";
 static const char *ROBOT_SIMULATOR_NAME = "zeg_robot_simulator";
 void start_server() {
@@ -327,9 +341,12 @@ TEST_CASE("testing rest rpc get pose trace") {
        	REQUIRE(pose_trace.size() > 0);
        	r = (tmp == *(end(pose_trace) - 1));
         CHECK(true == r);
-        for (auto &pose : pose_trace) {
-        	cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
-        }
+    	cout << "==========================" << endl;
+    	cout << pose_trace.size() << endl;
+    	for (auto &e : pose_trace) {
+    		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
+    	}
+    	cout << "==========================" << endl;
         auto msecs = client.call<int>("get_robot_msecs");
         CHECK(msecs == zeg_config::get_instance().msecs);
     }
@@ -343,7 +360,7 @@ TEST_CASE("testing rest rpc get pose trace") {
 TEST_CASE("testing init conf") {
 	zeg_config::get_instance().init_conf();
 	CHECK(100 == zeg_config::get_instance().msecs);
-	bool r = (zeg_config::get_instance().speed_ == robot_speed{1, 0, 0.1});
+	bool r = (zeg_config::get_instance().speed_ == robot_speed{1, 0, 36});
 	CHECK(true == r);
 	r = (zeg_config::get_instance().cur_pose_ == robot_pose{0, 0, 0});
 	CHECK(true == r);

@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-06                                                      *
+*  @date     2019-06-11                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -19,7 +19,10 @@
 *  2019/05/30 | 1.0.0     |                | Create file                     *
 * ---------------------------------------------------------------------------*
 *  2019/06/06 | 1.0.0     |                | Add call rest rpc               *
-*----------------------------------------------------------------------------*                                                                   *
+*----------------------------------------------------------------------------*
+*  2019/06/10 | 1.0.0     |                | Add call simulator              *
+*----------------------------------------------------------------------------*
+*  2019/06/11 | 1.0.0     |                | Add enqueue for simulator       *
 *****************************************************************************/
 #ifndef SRC_ZEG_POST_NAVIGATE_HPP_
 #define SRC_ZEG_POST_NAVIGATE_HPP_
@@ -28,17 +31,18 @@
 #include "zeg_config.hpp"
 #include "rpc_client.hpp"
 #include "codec.h"
+#include "zeg_robot_define.hpp"
 namespace zeg_message_interface {
 using namespace rest_rpc;
 using namespace rest_rpc::rpc_service;
-
+using namespace zeg_robot_simulator;
 class zeg_post_navigate : public base_thread {
 public:
 	bool init() {
 		return init_connect();
 	}
 	inline bool init_connect() {
-		return client.connect(RPC_SERVER_IP, RPC_SERVER_PORT, 5);
+		return client_.connect(RPC_SERVER_IP, RPC_SERVER_PORT, 5);
 	}
 protected:
 	virtual void todo() override {
@@ -49,13 +53,12 @@ protected:
 			if (false == unpack_command(cmd_str, cmd)) {
 				continue;
 			}
-			cout << "task id = " << cmd.task_id << endl;
-			cout << "pose count = " << cmd.points_.size() << endl;
+			LOG_INFO << "get taskid from scheduler server = " << cmd.task_id;
+			LOG_INFO << "get pose count from scheduler server = " << cmd.points_.size();
 			for (auto &pose : cmd.points_) {
-				cout << "(" << pose.x << "," << pose.y << ")" << endl;
+				LOG_INFO << "(" << pose.x << "," << pose.y << ")";
 			}
-			//auto taskid = client.call<uint64_t>("get_taskid", cmd);
-			//LOG_INFO << "get taskid from rest rpc server = " << taskid;
+			enqueue_simulator_pose_trace(cmd);
 		}
 	}
 public:
@@ -73,6 +76,40 @@ public:
 		LOG_INFO << "navigate command taskid = " << cmd.task_id;
 		return true;
 	}
+	bool call_simulator_get_pose_trace(const zeg_robot_navigate_command &cmd, vector<robot_pose>&pose_trace) {
+		bool no_exception = true;
+		vector<robot_pose>pose_set;
+		for (auto &e : cmd.points_) {
+			robot_pose pose(e.x, e.y, 0);
+			pose_set.emplace_back(pose);
+		}
+		/*for (auto &e : pose_set) {
+			cout << e.x << " " << e.y << " " << e.theta << endl;
+		}*/
+	    try {
+	    	pose_trace = client_.call<vector<robot_pose>>("get_pose_trace", pose_set);
+	    }
+	    catch (const std::exception& e) {
+	    	LOG_CRIT << e.what();
+	    	no_exception = false;
+	    }
+		return no_exception && (false == pose_trace.empty());
+	}
+	void enqueue_simulator_pose_trace(const zeg_robot_navigate_command &cmd) {
+		vector<robot_pose>pose_trace;
+		zpos zpose;
+		if (false == call_simulator_get_pose_trace(cmd, pose_trace)) {
+			LOG_CRIT << "call_simulator_ get_pose_trace failed...!";
+			return;
+		}
+		for (auto &pose : pose_trace) {
+			if (zeg_config::get_instance().simulator_pose_queue.size_approx() > 1000000) {
+				LOG_CRIT << "simulator_pose_queue is full...!";
+				continue;
+			}
+			zeg_config::get_instance().simulator_pose_queue.enqueue(pose);
+		}
+	}
 private:
 	bool unpack_command(const string &cmd_str, znavigate_command &cmd) {
 		msgpack::unpacked msg;
@@ -88,8 +125,8 @@ private:
 		LOG_INFO << "navigate command taskid = " << cmd.task_id;
 		return true;
 	}
-private:
-	rpc_client client;
+public:
+	rpc_client client_;
 public:
 	uint64_t test_unpack_command() {
 		string cmd_str;
@@ -105,7 +142,7 @@ public:
 	auto test_get_taskid(uint64_t taskid) {
 		znavigate_command cmd = {0};
 		cmd.task_id = taskid;
-		auto result = client.call<uint64_t>("get_taskid", cmd);
+		auto result = client_.call<uint64_t>("get_taskid", cmd);
 		return result;
 	}
 };

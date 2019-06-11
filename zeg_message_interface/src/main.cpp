@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-05-28                                                      *
+*  @date     2019-06-11                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -18,8 +18,9 @@
 *----------------------------------------------------------------------------*
 *  2019/05/27 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*
-*  2019/05/28 | 1.0.0     |                | delete reluctant variables
-*----------------------------------------------------------------------------*                                                                   *
+*  2019/05/28 | 1.0.0     |                | Delete reluctant variables      *
+*----------------------------------------------------------------------------*
+*  2019/06/11 | 1.0.0     |                | Add send simulator thread       *
 *****************************************************************************/
 #include <string.h>
 #include <iostream>
@@ -30,6 +31,7 @@
 #include "zeg_recv_navigate.hpp"
 #include "zeg_stat_output.hpp"
 #include "zeg_post_navigate.hpp"
+#include "zeg_send_simulator.hpp"
 using namespace zmq_self_agent;
 using namespace zeg_message_interface;
 static const int SIZE = 1024;
@@ -122,6 +124,7 @@ bool recv_thread() {
 zeg_recv_navigate zeg_recv_navigate_thread;
 zeg_stat_output zeg_stat_output_thread;
 zeg_post_navigate zeg_post_navigate_thread;
+zeg_send_simulator zeg_send_simulator_thread;
 bool start_thread() {
 	if (false == zeg_recv_navigate_thread.init()) {
 		return false;
@@ -129,15 +132,20 @@ bool start_thread() {
 	if (false == zeg_post_navigate_thread.init()) {
 		return false;
 	}
+	if (false == zeg_send_simulator_thread.init()) {
+		return false;
+	}
 	zeg_recv_navigate_thread.run();
 	zeg_stat_output_thread.run();
 	zeg_post_navigate_thread.run();
+	zeg_send_simulator_thread.run();
 	return true;
 }
 void join_thread() {
 	zeg_recv_navigate_thread.join();
 	zeg_stat_output_thread.join();
 	zeg_post_navigate_thread.join();
+	zeg_send_simulator_thread.join();
 }
 int main() {
 	/*thread th0(send_thread);

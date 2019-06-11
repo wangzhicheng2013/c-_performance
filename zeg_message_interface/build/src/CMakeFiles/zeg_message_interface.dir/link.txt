@@ -1,0 +1,1 @@
+/usr/bin/c++   -g -pthread -std=c++17   CMakeFiles/zeg_message_interface.dir/main.cpp.o  -o ../../bin/zeg_message_interface  -L/opt/c++/c-_performance/zeg_message_interface/libs -Wl,-rpath,/opt/c++/c-_performance/zeg_message_interface/libs -lzmq -lstdc++fs 

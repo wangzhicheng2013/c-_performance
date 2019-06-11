@@ -34,6 +34,7 @@ using namespace std;
 static const double M_EPS = 0.00000001;
 static const double M_PI_ = 3.1415926535898;
 static const double DEG2RAD_ZEG = 0.017453292519943;
+static const double RAD2DEG_ZEG = 57.295779513082;
 struct robot_pose {
 	inline robot_pose(double x = 0, double y = 0, double theta = 0) : x(x), y(y), theta(theta) {
 	}
@@ -95,6 +96,9 @@ inline bool equal(T x, T y) {
 }
 inline double deg2rad(double angle) {
 	return angle * DEG2RAD_ZEG;
+}
+inline double rad2deg(double angle) {
+    return angle * RAD2DEG_ZEG;
 }
 template <typename T>
 inline int sign(T d) {
