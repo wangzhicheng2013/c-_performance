@@ -239,7 +239,7 @@ TEST_CASE("testing get pose trace with angle") {
 	cout << "==========================" << endl;
 	cout << "pose trace size = " << pose_trace.size() << endl;
 	for (auto &e : pose_trace) {
-		cout << e.x << " " << e.y << " " << e.theta << endl;
+		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
 	}
 	cout << "==========================" << endl;
 
@@ -262,6 +262,12 @@ TEST_CASE("testing get pose trace with angle1") {
 	REQUIRE(pose_trace.size() > 0);
 	bool r = (tmp == *(end(pose_trace) - 1));
 	CHECK(true == r);
+	cout << "==========================" << endl;
+	cout << "pose trace size = " << pose_trace.size() << endl;
+	for (auto &e : pose_trace) {
+		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
+	}
+	cout << "==========================" << endl;
 }
 TEST_CASE("testing get pose trace with angle2") {
 	pose_compute pose_compute_obj;
@@ -281,6 +287,12 @@ TEST_CASE("testing get pose trace with angle2") {
 	REQUIRE(pose_trace.size() > 0);
 	bool r = (tmp == *(end(pose_trace) - 1));
 	CHECK(true == r);
+	cout << "==========================" << endl;
+	cout << "pose trace size = " << pose_trace.size() << endl;
+	for (auto &e : pose_trace) {
+		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
+	}
+	cout << "==========================" << endl;
 }
 TEST_CASE("testing get pose trace with angle3") {
 	pose_compute pose_compute_obj;
@@ -291,13 +303,38 @@ TEST_CASE("testing get pose trace with angle3") {
 	vector<robot_pose>pose_trace;
 	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace));
 	cout << "==========================" << endl;
-	cout << pose_trace.size() << endl;
+	cout << "pose trace size = " << pose_trace.size() << endl;
 	for (auto &e : pose_trace) {
 		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
 	}
 	cout << "==========================" << endl;
 }
-
+TEST_CASE("testing get pose trace with angle4") {
+	pose_compute pose_compute_obj;
+	pose_compute_obj.msecs = 100;
+	pose_compute_obj.speed_ = {1, 0, 78};
+	vector<robot_pose>pose_set;
+	vector<robot_pose>pose_trace;
+	robot_pose tmp;
+	default_random_engine e;
+	uniform_real_distribution<double>u(-100, 100);
+	uniform_real_distribution<double>u1(-3.14, 3.14);
+	for (int i = 0;i < n;i++) {
+		robot_pose pose(u(e), u(e), u1(e));
+		pose_set.emplace_back(pose);
+		tmp = pose;
+	}
+	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace));
+	REQUIRE(pose_trace.size() > 0);
+	bool r = (tmp == *(end(pose_trace) - 1));
+	CHECK(true == r);
+	cout << "==========================" << endl;
+	cout << "pose trace size = " << pose_trace.size() << endl;
+	for (auto &e : pose_trace) {
+		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
+	}
+	cout << "==========================" << endl;
+}
 static const char *ROBOT_SIMULATOR_PATH = "/opt/zeg_robot_simulator/bin/zeg_robot_simulator";
 static const char *ROBOT_SIMULATOR_NAME = "zeg_robot_simulator";
 void start_server() {
@@ -342,7 +379,7 @@ TEST_CASE("testing rest rpc get pose trace") {
        	r = (tmp == *(end(pose_trace) - 1));
         CHECK(true == r);
     	cout << "==========================" << endl;
-    	cout << pose_trace.size() << endl;
+    	cout << "pose trace size = " << pose_trace.size() << endl;
     	for (auto &e : pose_trace) {
     		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
     	}
@@ -364,4 +401,19 @@ TEST_CASE("testing init conf") {
 	CHECK(true == r);
 	r = (zeg_config::get_instance().cur_pose_ == robot_pose{0, 0, 0});
 	CHECK(true == r);
+}
+TEST_CASE("get_pose_trace_with_angle with target pose") {
+	pose_compute pose_compute_obj;
+	pose_compute_obj.msecs = 100;
+	pose_compute_obj.speed_ = {1, 0, 36};
+	pose_compute_obj.cur_pose_ = {0, 0, 0};
+	robot_pose target_pose{10, 1, 33.14};
+	vector<robot_pose>pose_trace;
+	CHECK(true == pose_compute_obj.get_pose_trace_with_angle(target_pose, pose_trace));
+	cout << "==========================" << endl;
+	cout << "pose trace size = " << pose_trace.size() << endl;
+	for (auto &e : pose_trace) {
+		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
+	}
+	cout << "==========================" << endl;
 }

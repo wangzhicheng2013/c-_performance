@@ -66,7 +66,7 @@ public:
 	}
 	bool get_pose_trace(vector<robot_pose>&pose_trace) {
 		pose_trace.clear();
-		double s = (speed_.vx) * msecs / 1000;
+		double s = speed_.vx * msecs / 1000;
 		double d = distance(cur_pose_, destination_pose_);
 		int loop = 2 * ceil(d / (msecs / 1000.0));
 		int count = 0;
@@ -83,7 +83,7 @@ public:
 		return true;
 	}
 	bool adjust_pose_angle() {
-		if (speed_.w <= 0) {
+		if (0 == speed_.w) {
 			return false;
 		}
 		theta = direction(cur_pose_, destination_pose_);
@@ -133,6 +133,22 @@ public:
 			merge_vector(pose_tmp, pose_trace);
 			pose_trace.emplace_back(destination_pose_);
 		}
+		return true;
+	}
+	bool get_pose_trace_with_angle(const robot_pose &target_pose, vector<robot_pose>&pose_trace) {
+		vector<robot_pose>pose_tmp;
+		pose_trace.clear();
+		destination_pose_= target_pose;
+		rotate_robot_pose(pose_tmp);
+		merge_vector(pose_tmp, pose_trace);
+		double tmp = speed_.w;
+		speed_.w = 0;
+		if (false == get_pose_trace(pose_tmp)) {
+			return false;
+		}
+		speed_.w = tmp;
+		merge_vector(pose_tmp, pose_trace);
+		pose_trace.emplace_back(destination_pose_);
 		return true;
 	}
 private:

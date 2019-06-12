@@ -50,10 +50,15 @@ int get_robot_msecs(rpc_conn conn) {
 vector<robot_pose> get_pose_trace(rpc_conn conn, const vector<robot_pose>&pose_set) {
 	vector<robot_pose>pose_trace;
 	lock_guard<mutex>lk(global_lock);
-	/*for (auto &e : pose_set) {
-		cout << e.x << " " << e.y << " " << e.theta << endl;
-	}*/
 	if (false == pose_compute_obj.get_pose_trace_with_angle(pose_set, pose_trace)) {
+		pose_trace.clear();
+	}
+	return pose_trace;
+}
+vector<robot_pose> get_pose_trace1(rpc_conn conn, const robot_pose &target_pose) {
+	vector<robot_pose>pose_trace;
+	lock_guard<mutex>lk(global_lock);
+	if (false == pose_compute_obj.get_pose_trace_with_angle(target_pose, pose_trace)) {
 		pose_trace.clear();
 	}
 	return pose_trace;
@@ -66,13 +71,11 @@ int main() {
 	server.register_handler("set_cur_pose", set_cur_pose);
 	server.register_handler("get_robot_msecs", get_robot_msecs);
 	server.register_handler("get_pose_trace", get_pose_trace);
+	server.register_handler("get_pose_trace1", get_pose_trace1);
 	zeg_mock_navigate_server obj;
 	server.register_handler("get_taskid", &zeg_mock_navigate_server::get_taskid, &obj);
 	server.run();
 
 	return 0;
 }
-
-
-
 
