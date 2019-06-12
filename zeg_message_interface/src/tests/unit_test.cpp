@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-10                                                      *
+*  @date     2019-06-12                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -25,6 +25,8 @@
 *  2019/06/06 | 1.0.0     |                | add navigate cmd unpack test    *
 *----------------------------------------------------------------------------*
 *  2019/06/10 | 1.0.0     |                | add call get_pose_trace test    *
+*----------------------------------------------------------------------------*
+*  2019/06/12 | 1.0.0     |                | add call get_pose_trace1 test   *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <stdio.h>
@@ -481,6 +483,24 @@ TEST_CASE("testing call simulator get pose trace") {
 	for (auto &pose : pose_trace) {
 		cout << "(" << pose.x << "," << pose.y << "," << pose.theta << ")" << endl;
 	}
+}
+TEST_CASE("testing call simulator get pose trace1") {
+	sleep(1);
+	zeg_robot_navigate_command cmd;
+	vector<robot_pose>pose_trace;
+	cmd.task_id = 10088;
+	zeg_robot_point p;
+	p.x = 10;
+	p.y = 11;
+	zeg_post_navigate post_obj;
+	CHECK(true == post_obj.init());
+	CHECK(true == post_obj.call_simulator_get_pose_trace(p, pose_trace));
+	cout << "==========================" << endl;
+	cout << "pose trace size = " << pose_trace.size() << endl;
+	for (auto &e : pose_trace) {
+		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
+	}
+	cout << "==========================" << endl;
 }
 TEST_CASE("testing enqueue simulator pose trace") {
 	sleep(1);

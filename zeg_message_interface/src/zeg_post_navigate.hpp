@@ -45,22 +45,22 @@ public:
 		return client_.connect(RPC_SERVER_IP, RPC_SERVER_PORT, 5);
 	}
 protected:
-	virtual void todo() override {
-		string cmd_str;
-		while (true) {
-			zeg_config::get_instance().navigate_cmd_queue.wait_dequeue(cmd_str);
-			zeg_robot_navigate_command cmd = {0};
-			if (false == unpack_command(cmd_str, cmd)) {
-				continue;
-			}
-			LOG_INFO << "get taskid from scheduler server = " << cmd.task_id;
-			LOG_INFO << "get pose count from scheduler server = " << cmd.points_.size();
-			for (auto &pose : cmd.points_) {
-				LOG_INFO << "(" << pose.x << "," << pose.y << ")";
-			}
-			enqueue_simulator_pose_trace(cmd);
-		}
-	}
+    virtual void todo() override {
+        string cmd_str;
+        while (true) {
+            zeg_config::get_instance().navigate_cmd_queue.wait_dequeue(cmd_str);
+            zeg_robot_navigate_command cmd = {0};
+            if (false == unpack_command(cmd_str, cmd)) {
+                continue;
+            }
+            LOG_INFO << "get taskid from scheduler server = " << cmd.task_id;
+            LOG_INFO << "get pose count from scheduler server = " << cmd.points_.size();
+            for (auto &pose : cmd.points_) {
+                LOG_INFO << "(" << pose.x << "," << pose.y << ")";
+            }
+            enqueue_simulator_pose_trace(cmd);
+        }
+    }
 public:
 	bool unpack_command(const string &cmd_str, zeg_robot_navigate_command &cmd) {
 		msgpack::unpacked msg;
@@ -83,9 +83,6 @@ public:
 			robot_pose pose(e.x, e.y, 0);
 			pose_set.emplace_back(pose);
 		}
-		/*for (auto &e : pose_set) {
-			cout << e.x << " " << e.y << " " << e.theta << endl;
-		}*/
 	    try {
 	    	pose_trace = client_.call<vector<robot_pose>>("get_pose_trace", pose_set);
 	    }
@@ -95,10 +92,35 @@ public:
 	    }
 		return no_exception && (false == pose_trace.empty());
 	}
+	bool call_simulator_get_pose_trace(const zeg_robot_point &point, vector<robot_pose>&pose_trace) {
+		bool no_exception = true;
+		robot_pose pose(point.x, point.y, 0);
+	    try {
+	    	pose_trace = client_.call<vector<robot_pose>>("get_pose_trace1", pose);
+	    }
+	    catch (const std::exception& e) {
+	    	LOG_CRIT << e.what();
+	    	no_exception = false;
+	    }
+		return no_exception && (false == pose_trace.empty());
+	}
 	void enqueue_simulator_pose_trace(const zeg_robot_navigate_command &cmd) {
 		vector<robot_pose>pose_trace;
-		zpos zpose;
 		if (false == call_simulator_get_pose_trace(cmd, pose_trace)) {
+			LOG_CRIT << "call_simulator_ get_pose_trace failed...!";
+			return;
+		}
+		for (auto &pose : pose_trace) {
+			if (zeg_config::get_instance().simulator_pose_queue.size_approx() > 1000000) {
+				LOG_CRIT << "simulator_pose_queue is full...!";
+				continue;
+			}
+			zeg_config::get_instance().simulator_pose_queue.enqueue(pose);
+		}
+	}
+	void enqueue_simulator_pose_trace(const zeg_robot_navigate_command &cmd, int index) {
+		vector<robot_pose>pose_trace;
+		if (false == call_simulator_get_pose_trace(cmd.points_[index], pose_trace)) {
 			LOG_CRIT << "call_simulator_ get_pose_trace failed...!";
 			return;
 		}

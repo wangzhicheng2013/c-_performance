@@ -66,7 +66,7 @@ vector<robot_pose> get_pose_trace1(rpc_conn conn, const robot_pose &target_pose)
 int main() {
 	pose_compute_obj.msecs = 100;
 	pose_compute_obj.speed_ = {1, 0, 0.1};
-	rpc_server server(zeg_config::get_instance().RPC_SERVER_PORT, thread::hardware_concurrency());
+	rpc_server server(zeg_config::get_instance().RPC_SERVER_PORT, thread::hardware_concurrency(), 0);
 	server.register_handler("get_cur_pose", get_cur_pose);
 	server.register_handler("set_cur_pose", set_cur_pose);
 	server.register_handler("get_robot_msecs", get_robot_msecs);
