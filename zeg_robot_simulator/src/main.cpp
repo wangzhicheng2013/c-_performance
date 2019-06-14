@@ -25,10 +25,11 @@
 #include "zeg_config.hpp"
 #include "zeg_data_define.h"
 #include "rpc_server.h"
+#include "zeg_robot_navigation.hpp"
+#include "zeg_robot_poses.hpp"
 using namespace rest_rpc;
 using namespace rpc_service;
 using namespace zeg_robot_simulator;
-using namespace zeg_message_interface;
 pose_compute pose_compute_obj;
 mutex global_lock;
 class zeg_mock_navigate_server {
@@ -63,18 +64,49 @@ vector<robot_pose> get_pose_trace1(rpc_conn conn, const robot_pose &target_pose)
 	}
 	return pose_trace;
 }
+// todo
+bool post_poses_to_simulator(rpc_conn conn, const vector<robot_pose>&pose_set) {
+	return zeg_robot_poses::get_instance().update_robot_poses(pose_set);
+}
+vector<zeg_robot_navigation>zeg_robot_navigation_objs;
+bool start_simulator() {
+	int num = zeg_config::get_instance().vechile_num;
+	zeg_robot_navigation_objs.resize(num);
+	for (int i = 0;i < num;++i) {
+		if (false == zeg_robot_navigation_objs[i].init()) {
+			return false;
+		}
+		zeg_robot_navigation_objs[i].set_vehicle_id(i);
+		zeg_robot_navigation_objs[i].run();
+	}
+	return true;
+}
+void end_simulator() {
+	for (auto &zeg_robot_navigation_obj : zeg_robot_navigation_objs) {
+		zeg_robot_navigation_obj.join();
+	}
+}
 int main() {
-	pose_compute_obj.msecs = 100;
-	pose_compute_obj.speed_ = {1, 0, 0.1};
-	rpc_server server(zeg_config::get_instance().RPC_SERVER_PORT, thread::hardware_concurrency(), 0);
-	server.register_handler("get_cur_pose", get_cur_pose);
-	server.register_handler("set_cur_pose", set_cur_pose);
-	server.register_handler("get_robot_msecs", get_robot_msecs);
-	server.register_handler("get_pose_trace", get_pose_trace);
-	server.register_handler("get_pose_trace1", get_pose_trace1);
+	zeg_config::get_instance().init();
+	pose_compute_obj.msecs = zeg_config::get_instance().msecs;
+	pose_compute_obj.speed_ = zeg_config::get_instance().speed_;
+	rpc_server robot_simulator_server(zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT, thread::hardware_concurrency(), 0);
+
+	robot_simulator_server.register_handler("get_cur_pose", get_cur_pose);
+	robot_simulator_server.register_handler("set_cur_pose", set_cur_pose);
+	robot_simulator_server.register_handler("get_robot_msecs", get_robot_msecs);
+	robot_simulator_server.register_handler("get_pose_trace", get_pose_trace);
+	robot_simulator_server.register_handler("get_pose_trace1", get_pose_trace1);
+	robot_simulator_server.register_handler("post_poses_to_simulator", post_poses_to_simulator);
+
 	zeg_mock_navigate_server obj;
-	server.register_handler("get_taskid", &zeg_mock_navigate_server::get_taskid, &obj);
-	server.run();
+	robot_simulator_server.register_handler("get_taskid", &zeg_mock_navigate_server::get_taskid, &obj);
+	if (false == start_simulator()) {
+		LOG_CRIT << "start simulator failed...!";
+		return -1;
+	}
+	robot_simulator_server.run();
+	end_simulator();
 
 	return 0;
 }

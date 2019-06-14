@@ -1,9 +1,9 @@
 /*****************************************************************************
-*  base thread class                                                         *
+*  zeg upload pose to scheduler server                                       *
 *  Copyright (C) 2019                                                        *
 *                                                                            *
-*  @file     base_thread.hpp                                                 *
-*  @brief    base thread                                                     *
+*  @file     zeg_send_simulator.hpp                                          *
+*  @brief    upload pose message to scheduler server                         *
 *  Details.                                                                  *
 *                                                                            *
 *  @author                                                                   *
@@ -16,35 +16,45 @@
 *  Change History :                                                          *
 *  <Date>     | <Version> | <Author>       | <Description>                   *
 *----------------------------------------------------------------------------*
-*  2019/05/29 | 1.0.0     |                | Create file                     *
-*----------------------------------------------------------------------------*
-*  2019/06/13 | 1.0.0     |                | Add delete                      *
+*  2019/06/13 | 1.0.0     |                | Create file                     *
 *----------------------------------------------------------------------------*                                                                   *
 *****************************************************************************/
-#ifndef SRC_BASE_THREAD_HPP_
-#define SRC_BASE_THREAD_HPP_
-#include <thread>
-using namespace std;
-class base_thread {
+#ifndef SRC_ZEG_UPLOAD_POSE_HPP_
+#define SRC_ZEG_UPLOAD_POSE_HPP_
+#include "zeg_config.hpp"
+#include "zmq_agent.hpp"
+#include "rpc_server.h"
+namespace zeg_message_interface {
+using namespace zmq_self_agent;
+using namespace rest_rpc;
+using namespace rpc_service;
+class zeg_upload_pose {
 public:
-	base_thread() = default;
-	base_thread(const base_thread &other) {
-	}
-	virtual ~base_thread()= default;
-public:
-	void run() {
-		thd_ = thread([this] {
-					this->todo();
-			});
-	}
-	void join() {
-		if (thd_.joinable()) {
-			thd_.join();
+	bool init() {
+		config_.sock_type = ZMQ_PUSH;
+		config_.addr = zeg_config::get_instance().pose_upload_address.c_str();
+		unsigned char ret = zmq_client_.init(config_);
+		if (NO_ERROR !=  ret) {
+			LOG_CRIT << "zmq error code = " <<  ret;
+			return false;
 		}
+		this_thread::sleep_for(chrono::seconds(1));
+		return true;
 	}
-protected:
-	virtual void todo() = 0;
+	bool upload_pose(rpc_conn conn, const robot_pose &pose) {
+		pack_robot_pose(pose);
+		return buffer_.size() == zmq_client_.send(buffer_.data(), buffer_.size());
+	}
 private:
-	thread thd_;
+	inline void pack_robot_pose(const robot_pose &pose) {
+		buffer_.clear();
+		msgpack::pack(buffer_, pose);
+	}
+private:
+	zmq_agent zmq_client_;
+	zmq_config config_;
+	msgpack::sbuffer buffer_;
 };
-#endif /* SRC_BASE_THREAD_HPP_ */
+}
+
+#endif /* SRC_ZEG_UPLOAD_POSE_HPP_ */

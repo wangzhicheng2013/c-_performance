@@ -62,10 +62,10 @@ public:
 			return;
 		}
 		vector<string>values{""};
-		config_parser::config_parser::get_instance().get_value("scheduler_server", "simulator_upload_address", values);
-		simulator_upload_address = values[0];
-		if (simulator_upload_address.empty()) {
-			simulator_upload_address = SCHEDULER_SERVER_SIMULATOR_ADDRESS;
+		config_parser::config_parser::get_instance().get_value("scheduler_server", "pose_upload_address", values);
+		pose_upload_address = values[0];
+		if (pose_upload_address.empty()) {
+			pose_upload_address = SCHEDULER_SERVER_SIMULATOR_ADDRESS;
 		}
 		config_parser::config_parser::get_instance().get_value("robot_simulator", "msecs", values);
 		robot_simulator_msecs = atoi(values[0].c_str());
@@ -96,8 +96,9 @@ public:
 	const int max_queue_size = 1000;
 	const int stat_log_interval = 10;
 public:
+	const int RPC_SERVER_UPLOAD_POSE_PORT = 9001;
 	int robot_simulator_msecs;
-	string simulator_upload_address;
+	string pose_upload_address;
 	atomic<uint64_t>recv_navigate_cmd_counter_;
 public:
 	BlockingConcurrentQueue<string>navigate_cmd_queue;

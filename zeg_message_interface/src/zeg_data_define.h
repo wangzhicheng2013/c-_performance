@@ -9,7 +9,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-06                                                      *
+*  @date     2019-06-12                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -23,6 +23,8 @@
 *  2019/05/30 | 1.0.0     |                | Add server port                 *
 *----------------------------------------------------------------------------*
 *  2019/06/06 | 1.0.0     |                | Add new navigate command        *
+*----------------------------------------------------------------------------*
+*  2019/06/12 | 1.0.0     |                | Add send simulator              *
 *****************************************************************************/
 #ifndef SRC_ZEG_DATA_DEFINE_H_
 #define SRC_ZEG_DATA_DEFINE_H_
@@ -34,6 +36,9 @@ using namespace std;
 enum {
 	NAVIGATE_COMMAND,
 	LOCATE_COMMAND
+};
+enum {
+	SEND_SIMULATOR
 };
 static const int RPC_SERVER_PORT = 9000;
 static const char *RPC_SERVER_IP = "127.0.0.1";

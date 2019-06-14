@@ -1,3 +1,4 @@
+
 /*****************************************************************************
 *  unit test source file                                                     *
 *  Copyright (C) 2019                                                        *
@@ -9,7 +10,7 @@
 *  @author                                                                   *
 *  @email                                                                    *
 *  @version  1.0.0                                                           *
-*  @date     2019-06-11                                                      *
+*  @date     2019-06-14                                                      *
 *  @license                                                                  *
 *                                                                            *
 *----------------------------------------------------------------------------*
@@ -25,6 +26,8 @@
 *  2019/06/05 | 1.0.0     |                | Add get pose trace test case    *
 *----------------------------------------------------------------------------*
 *  2019/06/10 | 1.0.0     |                | Add get pose trace test case    *
+*----------------------------------------------------------------------------*
+*  2019/06/14 | 1.0.0     |                | Add upload cur pose test case   *
 *****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <iostream>
@@ -36,6 +39,8 @@
 #include "zeg_pose_compute.hpp"
 #include "zeg_config.hpp"
 #include "rpc_client.hpp"
+#include "zeg_robot_navigation.hpp"
+#include "zeg_robot_poses.hpp"
 #include "codec.h"
 using namespace std;
 using namespace zeg_robot_simulator;
@@ -346,7 +351,7 @@ TEST_CASE("testing rest rpc get cur pose") {
 	bool no_exception = true;
     try {
     	sleep(1);
-    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_PORT);
+    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT);
     	bool r = client.connect();
     	REQUIRE(true == r);
         auto pose = client.call<robot_pose>("get_cur_pose");
@@ -362,7 +367,7 @@ TEST_CASE("testing rest rpc get pose trace") {
 	bool no_exception = true;
     try {
     	sleep(1);
-    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_PORT);
+    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT);
     	bool r = client.connect();
     	REQUIRE(true == r);
     	vector<robot_pose>pose_set;
@@ -392,17 +397,17 @@ TEST_CASE("testing rest rpc get pose trace") {
     	no_exception = false;
     }
     CHECK(true == no_exception);
-	kill_program(ROBOT_SIMULATOR_NAME);
 }
 TEST_CASE("testing init conf") {
 	zeg_config::get_instance().init_conf();
 	CHECK(100 == zeg_config::get_instance().msecs);
-	bool r = (zeg_config::get_instance().speed_ == robot_speed{1, 0, 36});
+	CHECK(1 == zeg_config::get_instance().vechile_num);
+	bool r = (zeg_config::get_instance().speed_ == robot_speed{1, 0, 90});
 	CHECK(true == r);
 	r = (zeg_config::get_instance().cur_pose_ == robot_pose{0, 0, 0});
 	CHECK(true == r);
 }
-TEST_CASE("get_pose_trace_with_angle with target pose") {
+TEST_CASE("testing get_pose_trace_with_angle with target pose") {
 	pose_compute pose_compute_obj;
 	pose_compute_obj.msecs = 100;
 	pose_compute_obj.speed_ = {1, 0, 36};
@@ -416,4 +421,91 @@ TEST_CASE("get_pose_trace_with_angle with target pose") {
 		cout << "(" << e.x << "," << e.y << "," << e.theta << ")" << endl;
 	}
 	cout << "==========================" << endl;
+}
+TEST_CASE("testing robot vehicle move") {
+	zeg_config::get_instance().init();
+	zeg_robot_vehicle zeg_robot_vehicle_obj;
+	zeg_robot_vehicle_obj.vehicle_cur_pose_ = {0, 0, 0};
+	zeg_robot_vehicle_obj.vehicle_speed_ = {1, 0, 0};
+	zeg_robot_vehicle_obj.move();
+	CHECK(0.1 == zeg_robot_vehicle_obj.vehicle_cur_pose_.x);
+	CHECK(0 == zeg_robot_vehicle_obj.vehicle_cur_pose_.y);
+	CHECK(0 == zeg_robot_vehicle_obj.vehicle_cur_pose_.theta);
+}
+TEST_CASE("testing robot vehicle rotate") {
+	zeg_robot_vehicle zeg_robot_vehicle_obj;
+	zeg_robot_vehicle_obj.vehicle_cur_pose_ = {0, 0, 0};
+	zeg_robot_vehicle_obj.vehicle_speed_ = {0, 0, 1.5708};
+	zeg_robot_vehicle_obj.rotate();
+	CHECK(0 == zeg_robot_vehicle_obj.vehicle_cur_pose_.x);
+	CHECK(0 == zeg_robot_vehicle_obj.vehicle_cur_pose_.y);
+	CHECK(equal(0.15708, zeg_robot_vehicle_obj.vehicle_cur_pose_.theta));
+}
+TEST_CASE("testing robot navigation upload cur pose") {
+	zeg_robot_navigation zeg_robot_navigation_obj;
+	CHECK(true == zeg_robot_navigation_obj.init());
+	for (int i = 0;i < 1;i++) {
+	//	CHECK(true == zeg_robot_navigation_obj.upload_cur_pose());
+	}
+}
+TEST_CASE("testing update_robot_poses") {
+	vector<robot_pose>v{{0, 0, 0}};
+	zeg_robot_poses::get_instance().update_robot_poses(v);
+	CHECK(1 == zeg_robot_poses::get_instance().id_poses_[0].size());
+	deque<robot_pose>&dq = zeg_robot_poses::get_instance().id_poses_[0];
+	robot_pose pose = dq.front();
+	dq.pop_front();
+	bool r = (robot_pose(0, 0, 0) == pose);
+	CHECK(true == r);
+
+	v.emplace_back(robot_pose(1, 1, 1));
+	zeg_robot_poses::get_instance().update_robot_poses(v);
+	CHECK(2 == zeg_robot_poses::get_instance().id_poses_[0].size());
+	deque<robot_pose>&dq1 = zeg_robot_poses::get_instance().id_poses_[0];
+	pose = dq1.front();
+	dq.pop_front();
+	r = (robot_pose(0, 0, 0) == pose);
+	CHECK(true == r);
+}
+TEST_CASE("testing get robot pose") {
+	robot_pose pose;
+	CHECK(true == zeg_robot_poses::get_instance().get_robot_pose(pose));
+	bool r = (robot_pose(1, 1, 1) == pose);
+	CHECK(true == r);
+	CHECK(false == zeg_robot_poses::get_instance().get_robot_pose(pose));
+}
+TEST_CASE("testing post poses to simulator") {
+	bool no_exception = true;
+    try {
+    	sleep(1);
+    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT);
+    	bool r = client.connect();
+    	REQUIRE(true == r);
+    	vector<robot_pose>pose_set{{0, 0, 0}, {1, 1, 1}};
+    	r = client.call<bool>("post_poses_to_simulator", pose_set);
+    	CHECK(true == r);
+    }
+    catch (const std::exception& e) {
+    	cout << e.what() << std::endl;
+    	no_exception = false;
+    }
+    CHECK(true == no_exception);
+}
+TEST_CASE("testing post poses to simulator1") {
+	bool no_exception = true;
+    try {
+    	sleep(1);
+    	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT);
+    	bool r = client.connect();
+    	REQUIRE(true == r);
+    	vector<robot_pose>pose_set;
+    	r = client.call<bool>("post_poses_to_simulator", pose_set);
+    	CHECK(true == r);
+    }
+    catch (const std::exception& e) {
+    	cout << e.what() << std::endl;
+    	no_exception = false;
+    }
+    CHECK(true == no_exception);
+    kill_program(ROBOT_SIMULATOR_NAME);
 }
