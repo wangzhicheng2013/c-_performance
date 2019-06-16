@@ -526,3 +526,14 @@ TEST_CASE("testing mutex_deque performance") {
     long long int end_count = chrono::high_resolution_clock::now().time_since_epoch().count();
     cout << "elapse time = " << (double)(end_count - begin_count) / double(1000000) << " ms" << endl;
 }
+TEST_CASE("testing need to rotate") {
+	zeg_robot_navigation zeg_robot_navigation_obj;
+	zeg_robot_navigation_obj.target_pose_ = {0, 1, 0};
+	CHECK(true == zeg_robot_navigation_obj.need_to_rotate());
+
+	zeg_robot_navigation_obj.target_pose_ = {10, 0, 0};
+	CHECK(false == zeg_robot_navigation_obj.need_to_rotate());
+
+	zeg_robot_navigation_obj.target_pose_ = {0.1, 0.001, 0};
+	CHECK(false == zeg_robot_navigation_obj.need_to_rotate());
+}

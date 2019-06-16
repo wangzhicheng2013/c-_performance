@@ -53,8 +53,28 @@ public:
 		update_target_pose();
 		status_machine_change();
 	}
+	inline bool need_to_rotate() {
+		if (0 == vehicle_.vehicle_speed_.w) {
+			return false;
+		}
+		double theta = direction(vehicle_.vehicle_cur_pose_, target_pose_);
+		double normalized_value = normalize(theta - vehicle_.vehicle_cur_pose_.theta);
+		if (fabs(normalized_value) <= vehicle_.vehicle_speed_.w * vehicle_.msecs_ / 1000) {
+			vehicle_.vehicle_cur_pose_.theta = theta;
+			return false;
+		}
+		return true;
+	}
 	void status_machine_change() {
-
+		double theta = 0;
+		unsigned char cmd = ROBOT_VEHICLE_STOP;
+		if (true == need_to_rotate()) {
+			cmd = ROBOT_VEHICLE_ROTATE;
+		}
+		else {
+			cmd = ROBOT_VEHICLE_MOVE;
+		}
+		update_cur_pose(cmd);
 	}
 	inline void update_target_pose() {
 		if (DEQUE_IS_UPDATED == way_points_.get_status()) {
@@ -64,8 +84,8 @@ public:
 			return;
 		}
 		double d = distance(vehicle_.vehicle_cur_pose_, target_pose_);
-		if (equal(d, 0.0)) { // TODO: distance tolerance  take into consideration
-			zeg_robot_poses::get_instance().get_robot_pose(target_pose_);
+		if (equal(d, 0.0)) {
+			way_points_.pop_front(target_pose_);
 			vehicle_.vechicle_status_ = ROBOT_VEHICLE_STOP;
 		}
 	}
@@ -81,18 +101,7 @@ protected:
 			}
 		}
 	}
-private:
-	static inline bool connect_rpc(rpc_client &client, bool &is_connect) {
-		if (false == is_connect) {
-			is_connect = client.connect();
-			if (false == is_connect) {
-				LOG_CRIT << "connect to rpc server ip = " << zeg_config::get_instance().RPC_SERVER_IP << " port = " << zeg_config::get_instance().RPC_SERVER_REPORT_POSE_PORT << "failed...!";
-				return false;
-			}
-		}
-		return true;
-	}
-private:
+public:
 	zeg_robot_vehicle vehicle_;
 	robot_pose target_pose_;
 	mutex_deque<robot_pose>way_points_;

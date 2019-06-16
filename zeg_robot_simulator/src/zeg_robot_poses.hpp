@@ -1,23 +1,3 @@
-/*****************************************************************************
-*  zeg robot poses                                                      *
-*  Copyright (C) 2019                                                        *
-*                                                                            *
-*  @file     zeg_robot_poses.hpp                                             *
-*  @brief    pose set for navigation                                         *
-*  Details.                                                                  *
-*                                                                            *
-*  @author                                                                   *
-*  @email                                                                    *
-*  @version  1.0.0                                                           *
-*  @date     2019-06-14                                                      *
-*  @license                                                                  *
-*                                                                            *
-*----------------------------------------------------------------------------*
-*  Change History :                                                          *
-*  <Date>     | <Version> | <Author>       | <Description>                   *
-*----------------------------------------------------------------------------*
-*  2019/06/14 | 1.0.0     |                | Create file                     *
-*****************************************************************************/
 #ifndef SRC_ZEG_ROBOT_POSES_HPP_
 #define SRC_ZEG_ROBOT_POSES_HPP_
 #include <vector>

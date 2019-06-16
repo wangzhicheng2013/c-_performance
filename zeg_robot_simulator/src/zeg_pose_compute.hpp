@@ -1,25 +1,3 @@
-/*****************************************************************************
-*  zeg pose compute                                                          *
-*  Copyright (C) 2019                                                        *
-*                                                                            *
-*  @file     zeg_pose_compute.hpp                                            *
-*  @brief    zeg pose compute                                                *
-*  Details.                                                                  *
-*                                                                            *
-*  @author                                                                   *
-*  @email                                                                    *
-*  @version  1.0.0                                                           *
-*  @date     2019-06-11                                                      *
-*  @license                                                                  *
-*                                                                            *
-*----------------------------------------------------------------------------*
-*  Change History :                                                          *
-*  <Date>     | <Version> | <Author>       | <Description>                   *
-*----------------------------------------------------------------------------*
-*  2019/06/10 | 1.0.0     |                | Create file                     *
-*----------------------------------------------------------------------------*
-*  2019/06/11 | 1.0.0     |                | Add sleep for ms                *
-*****************************************************************************/
 #ifndef SRC_ZEG_POSE_COMPUTE_HPP_
 #define SRC_ZEG_POSE_COMPUTE_HPP_
 #include <thread>
@@ -165,6 +143,7 @@ public:
 	robot_pose destination_pose_;
 	robot_speed speed_;
 };
+
 }
 
 #endif /* SRC_ZEG_POSE_COMPUTE_HPP_ */
