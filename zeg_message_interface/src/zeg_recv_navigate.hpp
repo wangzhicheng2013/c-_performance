@@ -40,7 +40,7 @@ public:
 		return true;
 	}
 protected:
-	virtual void todo() override {
+	virtual void process() override {
 		string recv_str;
 		while (true) {
 			zmq_server_navigate.recv(recv_str);

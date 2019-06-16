@@ -40,7 +40,8 @@ enum {
 };
 enum {
 	ROBOT_VEHICLE_STOP,
-	ROBOT_VEHICLE_RUN
+	ROBOT_VEHICLE_ROTATE,
+	ROBOT_VEHICLE_MOVE
 };
 static const int RPC_SERVER_PORT = 9000;
 static const char *RPC_SERVER_IP = "127.0.0.1";

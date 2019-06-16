@@ -113,7 +113,7 @@ private:
 	static zeg_config config_;
 public:
 	const int RPC_SERVER_ROBOT_SIMULATOR_PORT = 9000;
-	const int RPC_SERVER_UPLOAD_POSE_PORT = 9001;
+	const int RPC_SERVER_REPORT_POSE_PORT = 9001;
 	const char *RPC_SERVER_IP = "127.0.0.1";
 	const char *conf_path = "../etc/robot_simulator.conf";
 public:

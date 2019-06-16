@@ -30,7 +30,7 @@ public:
 		init_navigate_value();
 	}
 protected:
-	virtual void todo() override {
+	virtual void process() override {
 		while (true) {
 			this_thread::sleep_for(chrono::seconds(zeg_config::get_instance().stat_log_interval));
 			stat_recv_command(NAVIGATE_COMMAND, navigate_interval_value, navigate_last_value);

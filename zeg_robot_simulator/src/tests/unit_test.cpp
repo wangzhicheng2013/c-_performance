@@ -1,34 +1,3 @@
-
-/*****************************************************************************
-*  unit test source file                                                     *
-*  Copyright (C) 2019                                                        *
-*                                                                            *
-*  @file     unit_test.cpp                                                   *
-*  @brief    robot monitor unit test file                                    *
-*  Details.                                                                  *
-*                                                                            *
-*  @author                                                                   *
-*  @email                                                                    *
-*  @version  1.0.0                                                           *
-*  @date     2019-06-14                                                      *
-*  @license                                                                  *
-*                                                                            *
-*----------------------------------------------------------------------------*
-*  Change History :                                                          *
-*  <Date>     | <Version> | <Author>       | <Description>                   *
-*----------------------------------------------------------------------------*
-*  2019/06/02 | 1.0.0     |                | Create file                     *
-*----------------------------------------------------------------------------*
-*  2019/06/03 | 1.0.0     |                | Add config parser test case     *
-*----------------------------------------------------------------------------*
-*  2019/06/04 | 1.0.0     |                | Add get next pose test case     *
-*----------------------------------------------------------------------------*
-*  2019/06/05 | 1.0.0     |                | Add get pose trace test case    *
-*----------------------------------------------------------------------------*
-*  2019/06/10 | 1.0.0     |                | Add get pose trace test case    *
-*----------------------------------------------------------------------------*
-*  2019/06/14 | 1.0.0     |                | Add upload cur pose test case   *
-*****************************************************************************/
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <iostream>
 #include <fstream>
@@ -42,6 +11,7 @@
 #include "zeg_robot_navigation.hpp"
 #include "zeg_robot_poses.hpp"
 #include "codec.h"
+#include "mutex_deque.hpp"
 using namespace std;
 using namespace zeg_robot_simulator;
 using namespace rest_rpc;
@@ -481,8 +451,8 @@ TEST_CASE("testing post poses to simulator") {
     	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT);
     	bool r = client.connect();
     	REQUIRE(true == r);
-    	vector<robot_pose>pose_set{{0, 0, 0}, {1, 1, 1}};
-    	r = client.call<bool>("post_poses_to_simulator", pose_set);
+    	vector<robot_pose>way_points{{0, 0, 0}, {1, 1, 1}};
+    	r = client.call<bool>("report_poses_to_simulator", way_points, 0);
     	CHECK(true == r);
     }
     catch (const std::exception& e) {
@@ -498,9 +468,9 @@ TEST_CASE("testing post poses to simulator1") {
     	rpc_client client("127.0.0.1", zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT);
     	bool r = client.connect();
     	REQUIRE(true == r);
-    	vector<robot_pose>pose_set;
-    	r = client.call<bool>("post_poses_to_simulator", pose_set);
-    	CHECK(true == r);
+    	vector<robot_pose>way_points;
+    	r = client.call<bool>("report_poses_to_simulator", way_points, 0);
+    	CHECK(false == r);
     }
     catch (const std::exception& e) {
     	cout << e.what() << std::endl;
@@ -508,4 +478,51 @@ TEST_CASE("testing post poses to simulator1") {
     }
     CHECK(true == no_exception);
     kill_program(ROBOT_SIMULATOR_NAME);
+}
+TEST_CASE("testing mutex_deque") {
+	mutex_deque<int>q;
+
+	for (int i = 0;i < n;i++) {
+		q.push_back(i);
+	}
+	int e = -1;
+	q.pop_front(e);
+	CHECK(0 == e);
+}
+mutex_deque<string>global_queue;
+void push_mutex_deque() {
+	const int size = 2048;
+	const int loop = 100000;
+	string str(size, 'A');
+	for (int i = 0;i < loop;i++) {
+		global_queue.push_back(str);
+	}
+}
+void pop_mutex_deque() {
+	const int loop = 100000;
+	string str;
+	for (int i = 0;i < loop;i++) {
+		global_queue.pop_front(str);
+	}
+}
+TEST_CASE("testing mutex_deque performance") {
+	vector<thread>producer_threads;
+	vector<thread>consumer_threads;
+	for (int i = 0;i < 4;i++) {
+		producer_threads.emplace_back(thread(push_mutex_deque));
+		consumer_threads.emplace_back(thread(pop_mutex_deque));
+	}
+	long long int begin_count = chrono::high_resolution_clock::now().time_since_epoch().count();
+	for (auto &th : producer_threads) {
+		if (th.joinable()) {
+			th.join();
+		}
+	}
+	for (auto &th : consumer_threads) {
+		if (th.joinable()) {
+			th.join();
+		}
+	}
+    long long int end_count = chrono::high_resolution_clock::now().time_since_epoch().count();
+    cout << "elapse time = " << (double)(end_count - begin_count) / double(1000000) << " ms" << endl;
 }

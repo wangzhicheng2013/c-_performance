@@ -30,7 +30,7 @@ class zeg_send_simulator : public base_thread {
 public:
 	bool init() {
 		config.sock_type = ZMQ_PUSH;
-		config.addr = zeg_config::get_instance().pose_upload_address.c_str();
+		config.addr = zeg_config::get_instance().pose_report_address.c_str();
 		unsigned char ret = zmq_client_simulator.init(config);
 		if (NO_ERROR !=  ret) {
 			LOG_CRIT << "zmq error code = " <<  ret;
@@ -44,7 +44,7 @@ public:
 		zmq_client_simulator.send(buffer.data(), buffer.size());
 	}
 protected:
-	virtual void todo() override {
+	virtual void process() override {
 		robot_pose cur_pose;
 		robot_pose pose;
 		while (true) {

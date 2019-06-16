@@ -34,7 +34,7 @@ public:
 public:
 	void run() {
 		thd_ = thread([this] {
-					this->todo();
+					this->process();
 			});
 	}
 	void join() {
@@ -43,7 +43,7 @@ public:
 		}
 	}
 protected:
-	virtual void todo() = 0;
+	virtual void process() = 0;
 private:
 	thread thd_;
 };

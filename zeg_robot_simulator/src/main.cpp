@@ -1,26 +1,3 @@
-/*****************************************************************************
-*  main process entry                                                        *
-*  Copyright (C) 2019                                                        *
-*                                                                            *
-*  @file     main.cpp.cpp                                                    *
-*  @brief    rpc server						                                 *
-*  Details.                                                                  *
-*                                                                            *
-*  @author                                                                   *
-*  @email                                                                    *
-*  @version  1.0.0                                                           *
-*  @date     2019-06-06                                                      *
-*  @license                                                                  *
-*                                                                            *
-*----------------------------------------------------------------------------*
-*  Change History :                                                          *
-*  <Date>     | <Version> | <Author>       | <Description>                   *
-*----------------------------------------------------------------------------*
-*  2019/06/03 | 1.0.0     |                | Create file                     *
-*----------------------------------------------------------------------------*
-*  2019/06/06 | 1.0.0     |                | Add get robot msecs             *
-*****************************************************************************/
-#include <mutex>
 #include "zeg_pose_compute.hpp"
 #include "zeg_config.hpp"
 #include "zeg_data_define.h"
@@ -64,11 +41,10 @@ vector<robot_pose> get_pose_trace1(rpc_conn conn, const robot_pose &target_pose)
 	}
 	return pose_trace;
 }
-// todo
-bool post_poses_to_simulator(rpc_conn conn, const vector<robot_pose>&pose_set) {
-	return zeg_robot_poses::get_instance().update_robot_poses(pose_set);
-}
 vector<zeg_robot_navigation>zeg_robot_navigation_objs;
+bool report_poses_to_simulator(rpc_conn conn, const vector<robot_pose>&way_points, const int vehicle_id = 0) {
+	return zeg_robot_navigation_objs[vehicle_id].update_way_points(way_points);
+}
 bool start_simulator() {
 	int num = zeg_config::get_instance().vechile_num;
 	zeg_robot_navigation_objs.resize(num);
@@ -88,6 +64,10 @@ void end_simulator() {
 }
 int main() {
 	zeg_config::get_instance().init();
+	if (false == start_simulator()) {
+		LOG_CRIT << "start simulator failed...!";
+		return -1;
+	}
 	pose_compute_obj.msecs = zeg_config::get_instance().msecs;
 	pose_compute_obj.speed_ = zeg_config::get_instance().speed_;
 	rpc_server robot_simulator_server(zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT, thread::hardware_concurrency(), 0);
@@ -97,14 +77,10 @@ int main() {
 	robot_simulator_server.register_handler("get_robot_msecs", get_robot_msecs);
 	robot_simulator_server.register_handler("get_pose_trace", get_pose_trace);
 	robot_simulator_server.register_handler("get_pose_trace1", get_pose_trace1);
-	robot_simulator_server.register_handler("post_poses_to_simulator", post_poses_to_simulator);
+	robot_simulator_server.register_handler("report_poses_to_simulator", report_poses_to_simulator);
 
 	zeg_mock_navigate_server obj;
 	robot_simulator_server.register_handler("get_taskid", &zeg_mock_navigate_server::get_taskid, &obj);
-	if (false == start_simulator()) {
-		LOG_CRIT << "start simulator failed...!";
-		return -1;
-	}
 	robot_simulator_server.run();
 	end_simulator();
 

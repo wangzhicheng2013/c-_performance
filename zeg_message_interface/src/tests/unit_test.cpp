@@ -289,7 +289,7 @@ TEST_CASE("testing zmq agent send and recv") {
 }
 class add_thread : public base_thread  {
 protected:
-	virtual void todo() override {
+	virtual void process() override {
 		sum = 0;
 		for (int i = 0;i < n;i++) {
 			sum += i;
@@ -527,8 +527,8 @@ TEST_CASE("testing enqueue simulator pose trace") {
 }
 TEST_CASE("testing init conf") {
 	zeg_config::get_instance().init_conf();
-	CHECK(false == zeg_config::get_instance().pose_upload_address.empty());
-	cout << zeg_config::get_instance().pose_upload_address << endl;
+	CHECK(false == zeg_config::get_instance().pose_report_address.empty());
+	cout << zeg_config::get_instance().pose_report_address << endl;
 }
 TEST_CASE("testing pack robot pose") {
 	robot_pose pose = {10, 1000, 12};

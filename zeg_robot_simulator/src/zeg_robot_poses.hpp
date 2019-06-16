@@ -27,7 +27,7 @@
 #include "zeg_robot_define.hpp"
 namespace zeg_robot_simulator {
 using namespace std;
-class zeg_robot_poses {
+class zeg_robot_poses {//todo: rename to waypoints  refactor
 public:
 	static inline zeg_robot_poses &get_instance() {
 		return zeg_robot_poses_obj_;
@@ -58,6 +58,10 @@ public:
 		id_poses_[id].pop_front();
 		re_navigate = false;
 		return true;
+	}
+	bool empty(int id = 0) {
+		lock_guard<mutex>lk(mutex_);
+		return id_poses_[id].empty();
 	}
 	inline bool is_re_navigate() {
 		lock_guard<mutex>lk(mutex_);

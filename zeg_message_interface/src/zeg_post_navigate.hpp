@@ -45,7 +45,7 @@ public:
 		return client_.connect(RPC_SERVER_IP, RPC_SERVER_PORT, 5);
 	}
 protected:
-    virtual void todo() override {
+    virtual void process() override {
         string cmd_str;
         while (true) {
             zeg_config::get_instance().navigate_cmd_queue.wait_dequeue(cmd_str);

@@ -34,8 +34,8 @@
 #include "zeg_stat_output.hpp"
 #include "zeg_post_navigate.hpp"
 #include "zeg_send_simulator.hpp"
-#include "zeg_upload_pose.hpp"
 #include "rpc_server.h"
+#include "zeg_report_pose.hpp"
 using namespace rest_rpc;
 using namespace rpc_service;
 using namespace zmq_self_agent;
@@ -44,7 +44,7 @@ zeg_recv_navigate zeg_recv_navigate_thread;
 zeg_stat_output zeg_stat_output_thread;
 zeg_post_navigate zeg_post_navigate_thread;
 zeg_send_simulator zeg_send_simulator_thread;
-zeg_upload_pose zeg_upload_pose_obj;
+zeg_report_pose zeg_report_pose_obj;
 bool start_thread() {
 	if (false == zeg_recv_navigate_thread.init()) {
 		return false;
@@ -68,7 +68,7 @@ void join_thread() {
 	zeg_send_simulator_thread.join();
 }
 bool init_object() {
-	if (zeg_upload_pose_obj.init()) {
+	if (zeg_report_pose_obj.init()) {
 		return false;
 	}
 	return true;
@@ -80,9 +80,9 @@ int main() {
 	if (init_object()) {
 		return -1;
 	}
-	rpc_server zeg_upload_pose_server(zeg_config::get_instance().RPC_SERVER_UPLOAD_POSE_PORT, thread::hardware_concurrency(), 0);
-	zeg_upload_pose_server.register_handler("upload_pose", &zeg_upload_pose::upload_pose, &zeg_upload_pose_obj);
-	zeg_upload_pose_server.run();
+	rpc_server zeg_report_pose_server(zeg_config::get_instance().RPC_SERVER_REPORT_POSE_PORT, thread::hardware_concurrency(), 0);
+	zeg_report_pose_server.register_handler("report_pose", &zeg_report_pose::report_pose, &zeg_report_pose_obj);
+	zeg_report_pose_server.run();
 	//join_thread();
 	return 0;
 }
