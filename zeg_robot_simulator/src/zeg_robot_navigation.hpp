@@ -1,6 +1,5 @@
 #ifndef SRC_ZEG_ROBOT_NAVIGATION_HPP_
 #define SRC_ZEG_ROBOT_NAVIGATION_HPP_
-#include <atomic>
 #include "base_thread.hpp"
 #include "zeg_pose_compute.hpp"
 #include "zeg_robot_vehicle.hpp"
@@ -23,6 +22,9 @@ public:
 	}
 	inline void set_vehicle_id(int id) {
 		vehicle_.vechicle_id_ = id;
+	}
+	inline void set_vehicle_battery_remaining(double battery_remaining) {
+		vehicle_.vechicle_battery_remaining = battery_remaining;
 	}
 	bool report_cur_pose() {
 		bool no_exception = true;
@@ -67,12 +69,18 @@ public:
 	}
 	void status_machine_change() {
 		double theta = 0;
-		unsigned char cmd = ROBOT_VEHICLE_STOP;
+		unsigned char cmd = NAVIGATE_COMMAND;
 		if (true == need_to_rotate()) {
-			cmd = ROBOT_VEHICLE_ROTATE;
+			cmd = ROTATE_COMMAND;
 		}
 		else {
-			cmd = ROBOT_VEHICLE_MOVE;
+			double s = vehicle_.vehicle_speed_.vx * vehicle_.msecs_ / 1000;
+			double d = distance(vehicle_.vehicle_cur_pose_, target_pose_);
+			if (d <= s) {
+				vehicle_.vehicle_cur_pose_ = target_pose_;
+				return;
+			}
+			cmd = MOVE_COMMAND;
 		}
 		update_cur_pose(cmd);
 	}
@@ -85,6 +93,7 @@ public:
 		}
 		double d = distance(vehicle_.vehicle_cur_pose_, target_pose_);
 		if (equal(d, 0.0)) {
+			vehicle_.vehicle_cur_pose_ = target_pose_;
 			way_points_.pop_front(target_pose_);
 			vehicle_.vechicle_status_ = ROBOT_VEHICLE_STOP;
 		}

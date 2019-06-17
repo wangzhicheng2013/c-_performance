@@ -11,6 +11,7 @@ public:
 		vehicle_cur_pose_(zeg_config::get_instance().cur_pose_),
 		vehicle_speed_(zeg_config::get_instance().speed_) {
 		vechicle_id_ = 0;
+		vechicle_battery_remaining = 0.88;
 		vechicle_status_ = 	ROBOT_VEHICLE_STOP;
 		vehicle_speed_.w = deg2rad(vehicle_speed_.w);
 	}
@@ -36,6 +37,7 @@ public:
 	int msecs_;
 	int vechicle_id_;
 	unsigned char vechicle_status_;
+	double vechicle_battery_remaining;
 	robot_pose vehicle_cur_pose_;
 	robot_speed vehicle_speed_;
 };

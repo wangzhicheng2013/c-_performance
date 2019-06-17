@@ -537,3 +537,47 @@ TEST_CASE("testing need to rotate") {
 	zeg_robot_navigation_obj.target_pose_ = {0.1, 0.001, 0};
 	CHECK(false == zeg_robot_navigation_obj.need_to_rotate());
 }
+TEST_CASE("testing status machine change") {
+	zeg_config::get_instance().init();
+	vector<robot_pose>pose_set;
+	zeg_robot_navigation zeg_robot_navigation_obj;
+	zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_ = {0};
+	zeg_robot_navigation_obj.target_pose_ = {18, -11, 1.2};
+	double d = distance(zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_, zeg_robot_navigation_obj.target_pose_);
+	cout << "=====================================" << endl;
+	while (!equal(d, 0.0)) {
+		zeg_robot_navigation_obj.status_machine_change();
+		pose_set.emplace_back(zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_);
+		cout << "(" << zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_.x << "," << zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_.y << "," << zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_.theta << ")" << endl;
+		d = distance(zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_, zeg_robot_navigation_obj.target_pose_);
+	}
+	cout << "=====================================" << endl;
+	cout << "size = " << pose_set.size() << endl;
+	REQUIRE(pose_set.size() > 0);
+	bool r = equal(distance(*rbegin(pose_set), zeg_robot_navigation_obj.target_pose_), 0.0);
+	CHECK(true == r);
+}
+TEST_CASE("testing navigate") {
+	vector<robot_pose>way_points{{1, 2, 0.1}, {3, 8, 1.2}, {80, 100, 3.11}};
+	vector<robot_pose>pose_set;
+	zeg_robot_navigation zeg_robot_navigation_obj;
+	zeg_robot_navigation_obj.update_way_points(way_points);
+	cout << "=====================================" << endl;
+	while (true) {
+		zeg_robot_navigation_obj.navigate();
+		pose_set.emplace_back(zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_);
+		cout << "(" << zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_.x << "," << zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_.y << "," << zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_.theta << ")" << endl;
+		double d = distance(zeg_robot_navigation_obj.vehicle_.vehicle_cur_pose_, zeg_robot_navigation_obj.target_pose_);
+		if (equal(d, 0.0)) {
+			CHECK(0 != zeg_robot_navigation_obj.target_pose_.theta);
+			if (zeg_robot_navigation_obj.way_points_.empty()) {
+				break;
+			}
+		}
+	}
+	cout << "=====================================" << endl;
+	cout << "size = " << pose_set.size() << endl;
+	REQUIRE(pose_set.size() > 0);
+	bool r = equal(distance(*rbegin(pose_set), zeg_robot_navigation_obj.target_pose_), 0.0);
+	CHECK(true == r);
+}
