@@ -1,15 +1,15 @@
-#ifndef SRC_UDP_BROADCAST_CLIENT_HPP_
-#define SRC_UDP_BROADCAST_CLIENT_HPP_
+#ifndef SRC_UDP_UNICAST_CLIENT_HPP_
+#define SRC_UDP_UNICAST_CLIENT_HPP_
 #include "message_communicate_entity.hpp"
-class udp_broadcast_client : public message_communicate_entity {
+class udp_unicast_client : public message_communicate_entity {
 public:
-	udp_broadcast_client() {
+	udp_unicast_client() {
 		sock_fd_ = -1;
-		port_ = 17789;
-		broadcast_address_ = "255.255.255.255";
+		port_ = 27790;
+		unicast_address_ = "127.0.0.1";
 		memset(&client_addr_, 0, sizeof(client_addr_));
 	}
-	~udp_broadcast_client() {
+	~udp_unicast_client() {
 		if (sock_fd_ >= 0) {
 			close(sock_fd_);
 		}
@@ -20,23 +20,19 @@ public:
 	}
 	inline bool init_sock_fd() {
 		sock_fd_ = socket(AF_INET, SOCK_DGRAM, 0);
-		if (sock_fd_ < 0) {
-			return false;
-		}
-		int so_broadcast = 1;
-		return setsockopt(sock_fd_, SOL_SOCKET, SO_BROADCAST, (char *)&so_broadcast, sizeof(so_broadcast)) >= 0;
+		return sock_fd_ >= 0;
 	}
 	inline void set_port(int port) {
 		port_ = port;
 	}
-	inline void set_broadcast_address(const char *address) {
-		broadcast_address_ = address;
+	inline void set_unicast_address(const char *address) {
+		unicast_address_ = address;
 	}
 	virtual int send(const char *buf, int len) override {
 		struct sockaddr_in dest_addr = {0};
 		dest_addr.sin_family = AF_INET;
 		dest_addr.sin_port = htons(port_);
-		dest_addr.sin_addr.s_addr = inet_addr(broadcast_address_);
+		dest_addr.sin_addr.s_addr = inet_addr(unicast_address_);
 		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
 	}
 	virtual int recv(char *recv_buf, int buf_len) override {
@@ -55,8 +51,8 @@ public:
 private:
 	int sock_fd_;
 	int port_;
-	const char *broadcast_address_;
+	const char *unicast_address_;
 	struct sockaddr_in client_addr_;
 };
 
-#endif /* SRC_UDP_BROADCAST_CLIENT_HPP_ */
+#endif /* SRC_UDP_UNICAST_CLIENT_HPP_ */

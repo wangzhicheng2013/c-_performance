@@ -3,12 +3,13 @@
 #include <chrono>
 #include "doctest.hpp"
 #include "zeg_config.hpp"
-#include "udp_broadcast_agent.hpp"
-#include "udp_unicast_agent.hpp"
 #include "common_utility.hpp"
 #include "zeg_robot_broadcast.hpp"
 #include "udp_broadcast_server.hpp"
 #include "udp_broadcast_client.hpp"
+#include "udp_unicast_server.hpp"
+#include "udp_unicast_client.hpp"
+#include "message_communicate_entity_maker.hpp"
 using namespace zeg_robot_maintainence;
 char udp_recv_buf[BUFSIZ] = "";
 TEST_CASE("testing zeg configuration") {
@@ -56,19 +57,20 @@ TEST_CASE("testing get vehicle ids") {
 }
 void send_unicast_thread(const char *buf, int len) {
 	this_thread::sleep_for(chrono::milliseconds(200));
-	udp_unicast_agent client;
-	if (client.init_sock_fd() >= 0) {
-		client.send_unicast(buf, len, "127.0.0.1");
+	udp_unicast_client client;
+	if (client.init()) {
+		client.set_unicast_address("127.0.0.1");
+		client.send(buf, len);
 	}
 }
 void recv_unicast_thread(int &len) {
 	memset(udp_recv_buf, 0, sizeof(udp_recv_buf));
-	udp_unicast_agent server;
+	udp_unicast_server server;
 	if (server.init()) {
-		len = server.recv_unicast(udp_recv_buf);
+		len = server.recv(udp_recv_buf, sizeof(udp_recv_buf));
 	}
 }
-TEST_CASE("testing udp unicast agent") {
+TEST_CASE("testing udp unicast entity") {
 	string buf(1024, 'A');
 	int len = 0;
 	thread th0(send_unicast_thread, buf.c_str(), buf.size());

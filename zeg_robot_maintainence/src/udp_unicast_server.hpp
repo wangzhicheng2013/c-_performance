@@ -1,6 +1,6 @@
 #ifndef SRC_UDP_UNICAST_SERVER_HPP_
 #define SRC_UDP_UNICAST_SERVER_HPP_
-#include "message_communicate_entity.hpp"
+#include "message_communicate_entity_maker.hpp"
 class udp_unicast_server : public message_communicate_entity {
 public:
 	udp_unicast_server() {
@@ -52,5 +52,5 @@ private:
 	int port_;
 	struct sockaddr_in client_addr_;
 };
-
+REGISTER_ENTITY(udp_unicast_server, "udp_unicast_server");
 #endif /* SRC_UDP_UNICAST_SERVER_HPP_ */

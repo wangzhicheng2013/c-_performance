@@ -1,6 +1,7 @@
 #include <exception>
 #include "zeg_robot_broadcast.hpp"
-#include "udp_unicast_agent.hpp"
+#include "udp_unicast_server.hpp"
+#include "udp_unicast_client.hpp"
 #include "rpc_server.h"
 using namespace zeg_robot_maintainence;
 zeg_robot_broadcast zeg_robot_broadcast_thread;
@@ -16,14 +17,14 @@ void join_thread() {
 	zeg_robot_broadcast_thread.join();
 }
 char udp_recv_buf[BUFSIZ] = "";
-udp_unicast_agent mock_server;
+udp_unicast_server mock_server;
 zeg_robot_header obj;
 msgpack::sbuffer buffer_header;
 msgpack::sbuffer buffer_body;
 void recv_thread() {
 	msgpack::sbuffer buffer;
 	while (true) {
-		int len = mock_server.recv_unicast(udp_recv_buf);
+		int len = mock_server.recv(udp_recv_buf, sizeof(udp_recv_buf));
 		cout << "recv = " << udp_recv_buf << endl;
 		cout << "recv len = " << len << endl;
 		msgpack::unpacked msg;
@@ -54,7 +55,7 @@ void send_thread() {
 		memcpy(buf, buffer_header.data(), buffer_header.size());
 		memcpy(buf + buffer_header.size(), buffer_body.data(), buffer_body.size());
 		//cout << "size = " << buffer_header.size() << endl;
-		cout << "send back = " << mock_server.send_back(buf, buffer_header.size() + buffer_body.size()) << endl;
+		cout << "send back = " << mock_server.send(buf, buffer_header.size() + buffer_body.size()) << endl;
 	}
 }
 void make_uniform_pack() {

@@ -1,7 +1,7 @@
 #ifndef SRC_ZEG_ROBOT_BROADCAST_HPP_
 #define SRC_ZEG_ROBOT_BROADCAST_HPP_
 #include "base_thread.hpp"
-#include "udp_broadcast_agent.hpp"
+#include "udp_broadcast_client.hpp"
 #include "zeg_robot_define.hpp"
 #include "zeg_config.hpp"
 #include "rpc_client.hpp"
@@ -19,7 +19,7 @@ public:
 			return false;
 		}
 		rpc_connected_ = client_ptr_->connect(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT, 5);
-		return udp_broadcast_agent_obj_.init_sock_fd();
+		return udp_broadcast_client_.init();
 	}
 	bool get_vehicle_ids(vector<string>&ids) {
 		bool no_exception = true;
@@ -49,7 +49,7 @@ public:
 		info.timestamp = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
 		buffer_.clear();
 		msgpack::pack(buffer_, info);
-		cout << "send count = " << udp_broadcast_agent_obj_.send_broadcast(buffer_.data(), buffer_.size(), zeg_config::get_instance().robot_broadcast_address.c_str()) << endl;
+		cout << "send count = " << udp_broadcast_client_.send(buffer_.data(), buffer_.size()) << endl;
 	}
 protected:
 	virtual void process() override {
@@ -61,7 +61,7 @@ protected:
 public:
 	vector<string>vechicle_ids_;
 	unique_ptr<rpc_client>client_ptr_;
-	udp_broadcast_agent udp_broadcast_agent_obj_;
+	udp_broadcast_client udp_broadcast_client_;
 	msgpack::sbuffer buffer_;
 private:
 	bool rpc_connected_;
