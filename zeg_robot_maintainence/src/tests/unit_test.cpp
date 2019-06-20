@@ -7,6 +7,8 @@
 #include "udp_unicast_agent.hpp"
 #include "common_utility.hpp"
 #include "zeg_robot_broadcast.hpp"
+#include "udp_broadcast_server.hpp"
+#include "udp_broadcast_client.hpp"
 using namespace zeg_robot_maintainence;
 char udp_recv_buf[BUFSIZ] = "";
 TEST_CASE("testing zeg configuration") {
@@ -15,21 +17,19 @@ TEST_CASE("testing zeg configuration") {
 }
 void send_broadcast_thread(const char *buf) {
 	this_thread::sleep_for(chrono::milliseconds(100));
-	udp_broadcast_agent client;
-	if (client.init_sock_fd() >= 0) {
-		client.send_broadcast(buf, strlen(buf), zeg_config::get_instance().robot_broadcast_address.c_str());
+	udp_broadcast_client client;
+	if (client.init() >= 0) {
+		client.set_broadcast_address(zeg_config::get_instance().robot_broadcast_address.c_str());
+		client.send(buf, strlen(buf));
 	}
 }
 void recv_broadcast_thread() {
-	udp_broadcast_agent server;
+	udp_broadcast_server server;
 	if (server.init()) {
-		server.recv_broadcast(udp_recv_buf);
+		server.recv(udp_recv_buf, sizeof(udp_recv_buf));
 	}
 }
-TEST_CASE("testing udp broadcast agent") {
-	udp_broadcast_agent udp_broadcast_agent_obj;
-	udp_broadcast_agent_obj.set_port(8819);
-	REQUIRE(true == udp_broadcast_agent_obj.init());
+TEST_CASE("testing udp broadcast entity") {
 	const char *buf = "hello world, I am udp broadcast test.";
 	thread th0(send_broadcast_thread, buf);
 	thread th1(recv_broadcast_thread);
