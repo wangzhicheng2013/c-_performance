@@ -9,7 +9,6 @@
 #include "udp_broadcast_client.hpp"
 #include "udp_unicast_server.hpp"
 #include "udp_unicast_client.hpp"
-#include "message_communicate_entity_maker.hpp"
 using namespace zeg_robot_maintainence;
 char udp_recv_buf[BUFSIZ] = "";
 TEST_CASE("testing zeg configuration") {
@@ -18,16 +17,16 @@ TEST_CASE("testing zeg configuration") {
 }
 void send_broadcast_thread(const char *buf) {
 	this_thread::sleep_for(chrono::milliseconds(100));
-	udp_broadcast_client client;
-	if (client.init() >= 0) {
-		client.set_broadcast_address(zeg_config::get_instance().robot_broadcast_address.c_str());
-		client.send(buf, strlen(buf));
+	auto client = message_communicate_entity_maker::make_unique_ptr("udp.broadcast.client");
+	if (client->init() >= 0) {
+		reinterpret_cast<udp_broadcast_client *>(client.get())->set_broadcast_address(zeg_config::get_instance().robot_broadcast_address.c_str());
+		client->send(buf, strlen(buf));
 	}
 }
 void recv_broadcast_thread() {
-	udp_broadcast_server server;
-	if (server.init()) {
-		server.recv(udp_recv_buf, sizeof(udp_recv_buf));
+	auto server = message_communicate_entity_maker::make_unique_ptr("udp.broadcast.server");
+	if (server->init()) {
+		server->recv(udp_recv_buf, sizeof(udp_recv_buf));
 	}
 }
 TEST_CASE("testing udp broadcast entity") {
@@ -47,27 +46,21 @@ TEST_CASE("testing get vehicle ids") {
 	this_thread::sleep_for(chrono::milliseconds(1000));
 	zeg_robot_broadcast zeg_robot_broadcast_obj;
 	REQUIRE(true == zeg_robot_broadcast_obj.init());
-	vector<string>ids;
-	CHECK(true == zeg_robot_broadcast_obj.get_vehicle_ids(ids));
-	CHECK(ids.size() > 0);
-	for (auto &id : ids) {
-		cout << "id = " << id << endl;
-	}
 	kill_program(zeg_config::get_instance().robot_test_simulator_name.c_str());
 }
 void send_unicast_thread(const char *buf, int len) {
 	this_thread::sleep_for(chrono::milliseconds(200));
-	udp_unicast_client client;
-	if (client.init()) {
-		client.set_unicast_address("127.0.0.1");
-		client.send(buf, len);
+	auto client = message_communicate_entity_maker::make_unique_ptr("udp.unicast.client");
+	if (client->init()) {
+		reinterpret_cast<udp_unicast_client *>(client.get())->set_unicast_address("127.0.0.1");
+		client->send(buf, len);
 	}
 }
 void recv_unicast_thread(int &len) {
 	memset(udp_recv_buf, 0, sizeof(udp_recv_buf));
-	udp_unicast_server server;
-	if (server.init()) {
-		len = server.recv(udp_recv_buf, sizeof(udp_recv_buf));
+	auto server = message_communicate_entity_maker::make_unique_ptr("udp.unicast.server");
+	if (server->init()) {
+		len = server->recv(udp_recv_buf, sizeof(udp_recv_buf));
 	}
 }
 TEST_CASE("testing udp unicast entity") {
@@ -78,22 +71,13 @@ TEST_CASE("testing udp unicast entity") {
 	th0.join();
 	th1.join();
 	CHECK(0 == strcmp(buf.c_str(), udp_recv_buf));
-	cout << "buffer = " << udp_recv_buf << endl;
 }
 TEST_CASE("testing msg pack") {
 	msgpack::sbuffer buffer_header;
 	msgpack::sbuffer buffer_body;
-	robot_basic_info1 body;
-	body.x = 1.2;
-	body.y = 12;
-	body.theta = 0.01;
-	body.battery_percentage = 98.899;
-
+	robot_basic_info body(0, 1.2, 12, 0.01, 98.899);
 	msgpack::pack(buffer_body, body);
-	zeg_robot_header header;
-	header.type = "zeg.robot.basic.info";
-	header.robot_id = "zeg_robot_xx011212DD1";
-	header.timestamp = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+	zeg_robot_header header("zeg.robot.basic.info", "zeg_robot_xx011212DD1", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
 	msgpack::pack(buffer_header, header);
 	char buf[1024] = "";
 	memcpy(buf,  buffer_header.data(), buffer_header.size());
@@ -105,7 +89,7 @@ TEST_CASE("testing msg pack") {
 	cout << "offset = " << offset << endl;
 	msgpack::object obj = msg.get();
 	zeg_robot_header header1;
-	robot_basic_info1 body1;
+	robot_basic_info body1;
 	try {
 		obj.convert(&header1);
 		CHECK(header.robot_id == header1.robot_id);
@@ -126,59 +110,33 @@ TEST_CASE("testing msg pack") {
 TEST_CASE("testing udp unicast msg pack") {
 	msgpack::sbuffer buffer_header;
 	msgpack::sbuffer buffer_body;
-	robot_basic_info1 body;
-	body.x = 1.2;
-	body.y = 12;
-	body.theta = 0.01;
-	body.battery_percentage = 98.899;
-
+	robot_basic_info body(0, 1.2, 12, 0.01, 98.899);
 	msgpack::pack(buffer_body, body);
-	zeg_robot_header header;
-	header.type = "zeg.robot.basic.info";
-	header.robot_id = "zeg_robot_xx011212DD1";
-	header.timestamp = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+	zeg_robot_header header("zeg.robot.basic.info", "zeg_robot_xx011212DD1", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
 	msgpack::pack(buffer_header, header);
 	char buf[1024] = "";
 	memcpy(buf,  buffer_header.data(), buffer_header.size());
 	memcpy(buf + buffer_header.size(),  buffer_body.data(), buffer_body.size());
 	int len = buffer_header.size() + buffer_body.size();
 	cout << "len = " << len << endl;
-	for (int i = 0;i < len;i++) {
-		printf("%d\t", buf[i]);
-	}
-	cout << endl << "=============================" << endl;
 	int len1 = 0;
 	thread th0(send_unicast_thread, buf, len);
 	thread th1(recv_unicast_thread, ref(len1));
 	th0.join();
 	th1.join();
 	cout << "len1 = " << len1 << endl;
-	for (int i = 0;i < len1;i++) {
-		printf("%d\t", udp_recv_buf[i]);
-	}
-	cout << endl << "=============================" << endl;
 	msgpack::unpacked msg;
 	size_t offset = 0;
-	//msgpack::unpack(&msg, udp_recv_buf, len1, &offset);
 	msgpack::unpack(&msg, buf, len1, &offset);
 	CHECK(len1 == len);
-	for (int i = 0;i < len;i++) {
-		printf("x = %d\n", udp_recv_buf[i]);
-		if (udp_recv_buf[i] != buf[i]) {
-			printf("x = %d\n", udp_recv_buf[i]);
-			printf("y = %d\n", buf[i]);
-		}
-	}
-	cout << "offset = " << offset << endl;
 	msgpack::object obj = msg.get();
 	zeg_robot_header header1;
-	robot_basic_info1 body1;
+	robot_basic_info body1;
 	try {
 		obj.convert(&header1);
 		CHECK(header.robot_id == header1.robot_id);
 		CHECK(header.type == header1.type);
 		CHECK(header.timestamp == header1.timestamp);
-		//msgpack::unpack(&msg, udp_recv_buf, len1, &offset);
 		msgpack::unpack(&msg, buf, len1, &offset);
 		obj = msg.get();
 		obj.convert(&body1);

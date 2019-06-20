@@ -52,5 +52,6 @@ private:
 	int port_;
 	struct sockaddr_in client_addr_;
 };
-REGISTER_ENTITY(udp_unicast_server, "udp_unicast_server");
+REGISTER_MESSAGE_COMMUNICATE_ENTITY(udp_unicast_server, "udp.unicast.server");
+
 #endif /* SRC_UDP_UNICAST_SERVER_HPP_ */

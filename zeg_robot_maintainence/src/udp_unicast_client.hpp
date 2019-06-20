@@ -54,5 +54,6 @@ private:
 	const char *unicast_address_;
 	struct sockaddr_in client_addr_;
 };
+REGISTER_MESSAGE_COMMUNICATE_ENTITY(udp_unicast_client, "udp.unicast.client");
 
 #endif /* SRC_UDP_UNICAST_CLIENT_HPP_ */

@@ -1,6 +1,6 @@
 #ifndef SRC_UDP_BROADCAST_SERVER_HPP_
 #define SRC_UDP_BROADCAST_SERVER_HPP_
-#include "message_communicate_entity.hpp"
+#include "message_communicate_entity_maker.hpp"
 class udp_broadcast_server : public message_communicate_entity {
 public:
 	udp_broadcast_server() {
@@ -56,5 +56,6 @@ private:
 	int port_;
 	struct sockaddr_in client_addr_;
 };
+REGISTER_MESSAGE_COMMUNICATE_ENTITY(udp_broadcast_server, "udp.broadcast.server");
 
 #endif /* SRC_UDP_BROADCAST_SERVER_HPP_ */

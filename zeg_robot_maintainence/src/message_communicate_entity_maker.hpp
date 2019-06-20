@@ -46,7 +46,7 @@ private:
 	static unordered_map<string, function<message_communicate_entity *()>>map_;	// key -- entity type such udp_unicast
 };
 unordered_map<string, function<message_communicate_entity *()>>message_communicate_entity_maker::map_;
-#define REGISTER_ENTITY_VNAME(T) reg_entity_##T##_
-#define REGISTER_ENTITY(T, key, ...) static message_communicate_entity_maker::register_t<T> REGISTER_ENTITY_VNAME(T)(key, ##__VA_ARGS__);
+#define REGISTER_MESSAGE_COMMUNICATE_ENTITY_VNAME(T) reg_entity_##T##_
+#define REGISTER_MESSAGE_COMMUNICATE_ENTITY(T, key, ...) static message_communicate_entity_maker::register_t<T> REGISTER_MESSAGE_COMMUNICATE_ENTITY_VNAME(T)(key, ##__VA_ARGS__);
 
 #endif /* SRC_MESSAGE_COMMUNICATE_ENTITY_MAKER_HPP_ */
