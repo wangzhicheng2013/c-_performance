@@ -1,91 +1,44 @@
-/*****************************************************************************
-*  main process entry                                                        *
-*  Copyright (C) 2019                                                        *
-*                                                                            *
-*  @file     main.cpp                                                        *
-*  @brief    message interface main process entry                            *
-*  Details.                                                                  *
-*                                                                            *
-*  @author                                                                   *
-*  @email                                                                    *
-*  @version  1.0.0                                                           *
-*  @date     2019-06-12                                                      *
-*  @license                                                                  *
-*                                                                            *
-*----------------------------------------------------------------------------*
-*  Change History :                                                          *
-*  <Date>     | <Version> | <Author>       | <Description>                   *
-*----------------------------------------------------------------------------*
-*  2019/05/27 | 1.0.0     |                | Create file                     *
-*----------------------------------------------------------------------------*
-*  2019/05/28 | 1.0.0     |                | Delete reluctant variables      *
-*----------------------------------------------------------------------------*
-*  2019/06/11 | 1.0.0     |                | Add send simulator thread       *
-*----------------------------------------------------------------------------*
-*  2019/06/12 | 1.0.0     |                | Add rpc server                  *
-*****************************************************************************/
 #include <string.h>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <chrono>
-#include "zmq_agent.hpp"
-#include "zeg_recv_navigate.hpp"
-#include "zeg_stat_output.hpp"
-#include "zeg_post_navigate.hpp"
-#include "zeg_send_simulator.hpp"
 #include "rpc_server.h"
-#include "zeg_report_pose.hpp"
+#include "zeg_recv_command.hpp"
+#include "zeg_command_processor.hpp"
 using namespace rest_rpc;
 using namespace rpc_service;
-using namespace zmq_self_agent;
 using namespace zeg_message_interface;
-zeg_recv_navigate zeg_recv_navigate_thread;
-zeg_stat_output zeg_stat_output_thread;
-zeg_post_navigate zeg_post_navigate_thread;
-zeg_send_simulator zeg_send_simulator_thread;
-zeg_report_pose zeg_report_pose_obj;
+string process_command(rpc_conn conn, const string &str_buf) {
+	string ack_str;
+	zeg_command_processor::get_instance().process(str_buf.c_str(), str_buf.size(), ack_str);
+	return ack_str;
+}
+zeg_recv_command zeg_recv_command_thread;
 bool start_thread() {
-	if (false == zeg_recv_navigate_thread.init()) {
+	if (false == zeg_recv_command_thread.init()) {
 		return false;
 	}
-	if (false == zeg_post_navigate_thread.init()) {
-		return false;
-	}
-	if (false == zeg_send_simulator_thread.init()) {
-		return false;
-	}
-	zeg_recv_navigate_thread.run();
-	zeg_stat_output_thread.run();
-	zeg_post_navigate_thread.run();
-	zeg_send_simulator_thread.run();
+	zeg_recv_command_thread.run();
 	return true;
 }
 void join_thread() {
-	zeg_recv_navigate_thread.join();
-	zeg_stat_output_thread.join();
-	zeg_post_navigate_thread.join();
-	zeg_send_simulator_thread.join();
-}
-bool init_object() {
-	if (zeg_report_pose_obj.init()) {
-		return false;
-	}
-	return true;
+	zeg_recv_command_thread.join();
 }
 int main() {
-	/*if (false == start_thread()) {
-		return -1;
-	}*/
-	if (init_object()) {
+	if (false == zeg_config::get_instance().init()) {
+		LOG_CRIT << "zeg config init failed...!";
 		return -1;
 	}
-	rpc_server zeg_report_pose_server(zeg_config::get_instance().RPC_SERVER_REPORT_POSE_PORT, thread::hardware_concurrency(), 0);
-	zeg_report_pose_server.register_handler("report_pose", &zeg_report_pose::report_pose, &zeg_report_pose_obj);
-	zeg_report_pose_server.run();
-	//join_thread();
+	if (false == start_thread()) {
+		return -1;
+	}
+	rpc_server server(zeg_config::get_instance().robot_rpc_message_interface_layer_port, thread::hardware_concurrency(), 0, 1);
+	server.register_handler("process_command", process_command);
+	server.run();
+	join_thread();
+
 	return 0;
 }
-
 
 
