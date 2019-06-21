@@ -5,7 +5,7 @@ class udp_broadcast_client : public message_communicate_entity {
 public:
 	udp_broadcast_client() {
 		sock_fd_ = -1;
-		port_ = 17789;
+		port_ = 7780;
 		broadcast_address_ = "255.255.255.255";
 		memset(&client_addr_, 0, sizeof(client_addr_));
 	}

@@ -13,6 +13,7 @@ using namespace zeg_robot_maintainence;
 char udp_recv_buf[BUFSIZ] = "";
 TEST_CASE("testing zeg configuration") {
 	CHECK(false == zeg_config::get_instance().robot_broadcast_address.empty());
+	CHECK(7780 == zeg_config::get_instance().robot_broadcast_port);
 	CHECK(zeg_config::get_instance().robot_broadcast_interval > 0);
 }
 void send_broadcast_thread(const char *buf) {

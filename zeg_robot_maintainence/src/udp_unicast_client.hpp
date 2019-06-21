@@ -5,7 +5,7 @@ class udp_unicast_client : public message_communicate_entity {
 public:
 	udp_unicast_client() {
 		sock_fd_ = -1;
-		port_ = 27790;
+		port_ = 7780;
 		unicast_address_ = "127.0.0.1";
 		memset(&client_addr_, 0, sizeof(client_addr_));
 	}

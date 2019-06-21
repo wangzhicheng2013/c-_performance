@@ -5,7 +5,7 @@ class udp_broadcast_server : public message_communicate_entity {
 public:
 	udp_broadcast_server() {
 		sock_fd_ = -1;
-		port_ = 17789;
+		port_ = 7780;
 		memset(&client_addr_, 0, sizeof(client_addr_));
 	}
 	~udp_broadcast_server() {
@@ -15,7 +15,7 @@ public:
 	}
 public:
 	inline bool init() override {
-		return init_sock_fd() && bind_sock_fd();
+		return init_sock_fd() && bind_sock_fd() && set_timeout();
 	}
 	inline bool init_sock_fd() {
 		sock_fd_ = socket(AF_INET, SOCK_DGRAM, 0);
@@ -34,6 +34,12 @@ public:
 	}
 	inline void set_port(int port) {
 		port_ = port;
+	}
+	inline bool set_timeout(int s = 5) {
+		struct timeval timeout;
+		timeout.tv_sec = s;
+		timeout.tv_usec = 0;
+		return setsockopt(sock_fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) >= 0;
 	}
 	virtual int send(const char *buf, int len) override {
 		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&client_addr_, sizeof(client_addr_));

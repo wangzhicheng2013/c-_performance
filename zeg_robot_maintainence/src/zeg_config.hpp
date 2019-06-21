@@ -39,6 +39,11 @@ private:
 		if (robot_broadcast_address.empty()) {
 			robot_broadcast_address = "127.0.0.1";
 		}
+		config_parser::config_parser::get_instance().get_value("robot_broadcast", "port", values);
+		robot_broadcast_port = atoi(values[0].c_str());
+		if (robot_broadcast_port <= 0) {
+			robot_broadcast_port = 7780;
+		}
 		config_parser::config_parser::get_instance().get_value("robot_broadcast", "interval", values);
 		robot_broadcast_interval = atoi(values[0].c_str());
 		check_interval();
@@ -74,11 +79,12 @@ private:
 			robot_broadcast_interval = 100;
 		}
 	}
-public:
+private:
 	static zeg_config config_;
 public:
 	string robot_broadcast_address;
 	int robot_broadcast_interval;
+	int robot_broadcast_port;
 
 	int robot_rpc_host_layer_port;
 	int robot_rpc_maintainence_layer_port;
@@ -87,7 +93,6 @@ public:
 	string robot_test_simulator_name;
 public:
 	const char *RPC_SERVER_IP = "127.0.0.1";
-	const int RPC_SERVER_ROBOT_SIMULATOR_PORT = 9000;
 private:
 	const char *conf_path = "../etc/zeg_robot_maintainence.conf";
 	const char *zeg_log_path = "/opt/log";

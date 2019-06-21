@@ -14,20 +14,20 @@ public:
 	zeg_robot_broadcast() : rpc_client_ptr_(new rpc_client) ,
 				udp_broadcast_client_ptr_(message_communicate_entity_maker::make_unique_ptr("udp.broadcast.client")) {
 		rpc_connected_ = false;
-
+		reinterpret_cast<udp_broadcast_client *>(udp_broadcast_client_ptr_.get())->set_port(zeg_config::get_instance().robot_broadcast_port);
 	}
 	bool init() {
 		if (nullptr == rpc_client_ptr_ || nullptr == udp_broadcast_client_ptr_) {
 			return false;
 		}
-		rpc_connected_ = rpc_client_ptr_->connect(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT, 5);
+		rpc_connected_ = rpc_client_ptr_->connect(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_host_layer_port, 5);
 		return udp_broadcast_client_ptr_->init();
 	}
     bool mock_get_robot_basic_info(robot_basic_info &info) {
         bool no_exception = true;
         bool res = true;
         if (false == rpc_connected_) {
-            rpc_connected_ = rpc_client_ptr_->connect(zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().RPC_SERVER_ROBOT_SIMULATOR_PORT, 5);
+            rpc_connected_ = rpc_client_ptr_->connect(zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_host_layer_port, 5);
         }
         try {
             info = rpc_client_ptr_->call<robot_basic_info>("get_robot_basic_info");
@@ -39,7 +39,9 @@ public:
         return no_exception;
     }
 	void mock_send_pack() {
-		zeg_robot_header header("zeg.robot.basic.info", "zeg_robot_xx011212DD1", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+		buffer_header_.clear();
+		buffer_body_.clear();
+		zeg_robot_header header("zeg.robot.basic.info", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
 		msgpack::pack(buffer_header_, header);
 		robot_basic_info body(0, 0, 0.1, 0, 99.8);
 		msgpack::pack(buffer_body_, body);
@@ -47,7 +49,7 @@ public:
 		memcpy(buf,  buffer_header_.data(), buffer_header_.size());
 		memcpy(buf + buffer_header_.size(),  buffer_body_.data(), buffer_body_.size());
 		int len = buffer_header_.size() + buffer_body_.size();
-		LOG_INFO << udp_broadcast_client_ptr_->send(buf, len);
+		LOG_INFO << "send broadcast count = " << udp_broadcast_client_ptr_->send(buf, len);
 	}
 protected:
 	virtual void process() override {
