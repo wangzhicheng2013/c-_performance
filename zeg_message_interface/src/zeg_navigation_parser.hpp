@@ -31,11 +31,9 @@ private:
 		msgpack::sbuffer buffer_body;
 		msgpack::pack(buffer_header, header);
 		msgpack::pack(buffer_body, cmd_ack);
-		char buf[1024] = "";
-		memcpy(buf,  buffer_header.data(), buffer_header.size());
-		memcpy(buf + buffer_header.size(),  buffer_body.data(), buffer_body.size());
-		int len = buffer_header.size() + buffer_body.size();
-		ack_str.assign(buf, len);
+
+		ack_str.assign(buffer_header.data(), buffer_header.size());
+		ack_str.append(buffer_body.data(), buffer_body.size());
 	}
 	void call_report_poses_to_host_rpc(const zeg_robot_navigation_command &cmd) {
 		static rpc_client client(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_host_layer_port);
