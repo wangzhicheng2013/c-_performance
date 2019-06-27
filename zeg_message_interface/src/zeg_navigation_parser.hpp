@@ -24,13 +24,9 @@ public:
 	bool call_report_poses_to_navigation_escort(const zeg_command_unpack_struct *unpack_cmd,
 			const zeg_robot_navigation_command &cmd) {
 		static rpc_client client(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_navigation_escort_layer_port);
-		static bool rpc_connected = client.connect(1);
-		if (false == rpc_connected) {
-			rpc_connected = client.connect(1);
-			if (false == rpc_connected) {
-				LOG_CRIT << "robot host rpc connect failed...!";
-				return false;
-			}
+		if (false == client.connect(1)) {
+			LOG_CRIT << "robot host rpc connect failed...!";
+			return false;
 		}
 		if (false == client.call<bool>("report_poses_to_navigation_escort", *(unpack_cmd->unpack_header), cmd)) {
 			LOG_CRIT << "report_poses_to_navigation_escort rpc call failed...!";
