@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include "sole.hpp"
 using namespace std;
 template <typename T>
 void merge_vector(const vector<T>&v0, vector<T>&v1) {
@@ -15,7 +16,7 @@ void merge_vector(const vector<T>&v0, vector<T>&v1) {
 	});
 }
 inline void run_program(const char* path) {
-	if (0 == system(path)) {
+	if (0 == std::system(path)) {
 		cout << path << " start ok." << endl;
 	}
 	else {
@@ -36,9 +37,12 @@ void kill_program(const char *program_name) {
 	pclose(fp);
 	snprintf(cmd, sizeof(cmd), "kill -9  %s", buf);
 	cout << cmd << endl;
-	if (0 == system(cmd)) {
+	if (0 == std::system(cmd)) {
 		cout << program_name << " end ok." << endl;
 	}
+}
+void make_uuid(string &uuid) {
+	uuid = sole::uuid0().str();
 }
 
 #endif /* SRC_COMMON_UTILITY_HPP_ */

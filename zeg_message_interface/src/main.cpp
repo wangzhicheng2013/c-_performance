@@ -6,6 +6,7 @@
 #include "rpc_server.h"
 #include "zeg_recv_command.hpp"
 #include "zeg_command_processor.hpp"
+#include "zeg_robot_navigation_lock_point_sender.hpp"
 using namespace rest_rpc;
 using namespace rpc_service;
 using namespace zeg_message_interface;
@@ -13,6 +14,9 @@ string process_command(rpc_conn conn, const string &str_buf) {
 	string ack_str;
 	zeg_command_processor::get_instance().process(str_buf.c_str(), str_buf.size(), ack_str);
 	return ack_str;
+}
+bool send_navigation_lock_point(rpc_conn conn, const zeg_robot_header &header, const zeg_robot_navigation_lock_point &body) {
+	return zeg_robot_navigation_lock_point_sender::get_instance().send(header, body);
 }
 zeg_recv_command zeg_recv_command_thread;
 bool start_thread() {
@@ -35,6 +39,7 @@ int main() {
 	}
 	rpc_server server(zeg_config::get_instance().robot_rpc_message_interface_layer_port, thread::hardware_concurrency(), 0, 1);
 	server.register_handler("process_command", process_command);
+	server.register_handler("send_navigation_lock_point", send_navigation_lock_point);
 	server.run();
 	join_thread();
 

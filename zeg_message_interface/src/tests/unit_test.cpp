@@ -15,12 +15,16 @@
 #include "base_thread.hpp"
 #include "zeg_command_processor.hpp"
 #include "zeg_recv_command.hpp"
+#include "zeg_robot_navigation_lock_point_sender.hpp"
+#include "udp_unicast_client.hpp"
 using namespace zeg_message_interface;
 namespace fs = experimental::filesystem;
 TEST_CASE("testing init conf") {
-	CHECK(zeg_config::get_instance().robot_rpc_host_layer_port > 0);
-	CHECK(zeg_config::get_instance().robot_rpc_message_interface_layer_port > 0);
+	CHECK(9003 == zeg_config::get_instance().robot_rpc_navigation_escort_layer_port);
+	CHECK(9001 == zeg_config::get_instance().robot_rpc_message_interface_layer_port);
 	CHECK(7780 == zeg_config::get_instance().udp_server_port);
+	CHECK(7780 == zeg_config::get_instance().schedule_server_port);
+	CHECK(false == zeg_config::get_instance().schedule_server_ip.empty());
 }
 class my_class {
 public:
@@ -84,6 +88,7 @@ TEST_CASE("testing thread base") {
     }
     CHECK(sum == my_thread.sum);
 }
+
 TEST_CASE("testing zeg_command_processor process0") {
 	const char *buf = "hello world. 12345678";
 	int len = strlen(buf);
@@ -112,7 +117,14 @@ TEST_CASE("testing zeg_command_processor process1") {
 	string ack_str;
 	CHECK(false == zeg_command_processor::get_instance().process(buf, len, ack_str));
 }
+void start_message_interface() {
+    run_program(zeg_config::get_instance().robot_test_message_interface_path.c_str());
+}
 TEST_CASE("testing zeg_command_processor process2") {
+	thread th(start_message_interface);
+	th.detach();
+	this_thread::sleep_for(chrono::milliseconds(6000));
+
 	zeg_robot_header header("zeg.robot.navigation.command", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
 	zeg_robot_point p0(1, 2);
 	zeg_robot_point p1(11.2, 21.22);
@@ -156,14 +168,30 @@ TEST_CASE("testing zeg_command_processor process2") {
 	}
 	CHECK(true == no_excepption);
 }
-void start_message_interface() {
-    run_program(zeg_config::get_instance().robot_test_message_interface_path.c_str());
+TEST_CASE("testing zeg_command_processor process3") {
+	zeg_robot_header header("zeg.robot.navigation.lock.point.ack", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+	zeg_robot_point p0(1, 2);
+	zeg_robot_point p1(11.2, 21.22);
+	zeg_robot_navigation_lock_point_ack cmd;
+	cmd.task_id = "007";
+	cmd.locked_points.emplace_back(p0);
+	cmd.locked_points.emplace_back(p1);
+
+	msgpack::sbuffer buffer_header;
+	msgpack::sbuffer buffer_body;
+	msgpack::pack(buffer_header, header);
+	msgpack::pack(buffer_body, cmd);
+
+	char buf[1024] = "";
+	memcpy(buf,  buffer_header.data(), buffer_header.size());
+	memcpy(buf + buffer_header.size(),  buffer_body.data(), buffer_body.size());
+	int len = buffer_header.size() + buffer_body.size();
+
+	string ack_str;
+	CHECK(true == zeg_command_processor::get_instance().process(buf, len, ack_str));
+	CHECK(true == ack_str.empty());
 }
 TEST_CASE("testing process command") {
-	thread th(start_message_interface);
-	th.detach();
-	this_thread::sleep_for(chrono::milliseconds(6000));
-
 	zeg_robot_header header("zeg.robot.navigation.command", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
 	zeg_robot_point p0(1, 2);
 	zeg_robot_point p1(11.2, 21.22);
@@ -217,4 +245,55 @@ TEST_CASE("testing process command") {
 	CHECK(true == no_excepption);
 
 	kill_program(zeg_config::get_instance().robot_test_message_interface_name.c_str());
+}
+udp_unicast_server udp_unicast_server_obj;
+udp_unicast_client udp_unicast_client_obj;
+udp_unicast_server udp_unicast_schedule_server_obj;
+void udp_client_thread(string &str) {
+	udp_unicast_client_obj.set_port(10001);
+	if (udp_unicast_client_obj.send("AAA", 3) <= 0) {
+		cerr << "send AAA error." << endl;
+		return;
+	}
+	char buf[1024] = "";
+	int recv_len = udp_unicast_client_obj.recv(buf, sizeof(buf));
+	if (recv_len > 0) {
+		str.assign(buf, recv_len);
+	}
+}
+void udp_server_thread(const string &str) {
+	char buf[1024] = "";
+	int len = sizeof(buf);
+	int recv_len = udp_unicast_server_obj.recv(buf, len);
+	if (recv_len > 0) {
+		udp_unicast_server_obj.send(buf, recv_len);
+		udp_unicast_server_obj.make_scheduler_client_addr("127.0.0.1", 10002);
+		udp_unicast_server_obj.send_to_schedule_server(str.c_str(), str.size());
+	}
+}
+void udp_schdule_server_thread(string &str) {
+	char buf[1024] = "";
+	int len = sizeof(buf);
+	int recv_len = udp_unicast_schedule_server_obj.recv(buf, len);
+	if (recv_len > 0) {
+		str.assign(buf, recv_len);
+	}
+}
+TEST_CASE("testing unicast send recv") {
+	CHECK(true == udp_unicast_client_obj.init());
+	udp_unicast_server_obj.set_port(10001);
+	CHECK(true == udp_unicast_server_obj.init());
+	udp_unicast_schedule_server_obj.set_port(10002);
+	CHECK(true == udp_unicast_schedule_server_obj.init());
+	string str = "hello unicast.";
+	string recv_str;
+	string recv_str1;
+	thread th0(udp_client_thread, ref(recv_str));
+	thread th1(udp_server_thread, ref(str));
+	thread th2(udp_schdule_server_thread, ref(recv_str1));
+	th0.join();
+	th1.join();
+	th2.join();
+	CHECK(recv_str == "AAA");
+	CHECK(recv_str1 == str);
 }

@@ -7,6 +7,7 @@ public:
 		sock_fd_ = -1;
 		port_ = 7780;
 		memset(&client_addr_, 0, sizeof(client_addr_));
+		memset(&scheduler_client_addr_, 0, sizeof(scheduler_client_addr_));
 	}
 	~udp_unicast_server() {
 		if (sock_fd_ >= 0) {
@@ -41,23 +42,35 @@ public:
 	virtual int send(const char *buf, int len) override {
 		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&client_addr_, sizeof(client_addr_));
 	}
+	int send_to_schedule_server(const char *buf, int len) {
+		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&scheduler_client_addr_, sizeof(scheduler_client_addr_));
+	}
 	virtual int recv(char *recv_buf, int buf_len) override {
-		if (buf_len <= 0 || buf_len > BUFSIZ) {
+		if (buf_len <= 0 || buf_len > BUF_SIZE) {
 			return -1;
 		}
-		char buf[BUFSIZ] = "";
+		char buf[BUF_SIZE] = "";
 		socklen_t size = sizeof(struct sockaddr);
 		int len = recvfrom(sock_fd_, buf, sizeof(buf), 0, (struct sockaddr *)&client_addr_, &size);
-		if (len <= BUFSIZ && len > 0) {
+		if (len <= BUF_SIZE && len > 0) {
 			len = min(len, buf_len);
 			memcpy(recv_buf, buf, len);
 		}
 		return len;
 	}
+	void make_scheduler_client_addr(const char *ip = "192.168.4.8", int port = 7780) {
+		scheduler_client_addr_.sin_family = AF_INET;
+		scheduler_client_addr_.sin_addr.s_addr = inet_addr(ip);
+		scheduler_client_addr_.sin_port = htons(port);
+	}
 private:
 	int sock_fd_;
 	int port_;
+private:
 	struct sockaddr_in client_addr_;
+	struct sockaddr_in scheduler_client_addr_;
+private:
+	const int BUF_SIZE = 1024;
 };
 REGISTER_MESSAGE_COMMUNICATE_ENTITY(udp_unicast_server, "udp.unicast.server");
 

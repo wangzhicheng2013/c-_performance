@@ -2,6 +2,7 @@
 #define SRC_ZEG_COMMAND_PROCESSOR_HPP_
 #include "zeg_robot_define.hpp"
 #include "zeg_config.hpp"
+#include "zeg_navigation_lock_point_ack_parser.hpp"
 #include "zeg_navigation_parser.hpp"
 namespace zeg_message_interface {
 class zeg_command_processor {

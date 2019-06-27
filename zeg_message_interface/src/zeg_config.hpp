@@ -31,11 +31,13 @@ public:
 		}
 		get_udp_server_config();
 		get_rpc_config();
+		get_schedule_server_config();
 		get_robot_test_config();
 	}
 private:
 	inline bool init_udp() {
 		reinterpret_cast<udp_unicast_server *>(udp_unicast_server_ptr_.get())->set_port(udp_server_port);
+		reinterpret_cast<udp_unicast_server *>(udp_unicast_server_ptr_.get())->make_scheduler_client_addr(schedule_server_ip.c_str(), schedule_server_port);
 		return udp_unicast_server_ptr_->init();
 	}
 	inline void init_log() {
@@ -53,10 +55,10 @@ private:
 	}
 	inline void get_rpc_config() {
 		vector<string>values{""};
-		config_parser::config_parser::get_instance().get_value("robot_rpc", "host_layer_port", values);
-		robot_rpc_host_layer_port = atoi(values[0].c_str());
-		if (robot_rpc_host_layer_port <= 0) {
-			robot_rpc_host_layer_port = 9000;
+		config_parser::config_parser::get_instance().get_value("robot_rpc", "navigation_escort_layer_port", values);
+		robot_rpc_navigation_escort_layer_port = atoi(values[0].c_str());
+		if (robot_rpc_navigation_escort_layer_port <= 0) {
+			robot_rpc_navigation_escort_layer_port = 9003;
 		}
 		config_parser::config_parser::get_instance().get_value("robot_rpc", "message_interface_layer_port", values);
 		robot_rpc_message_interface_layer_port = atoi(values[0].c_str());
@@ -64,17 +66,17 @@ private:
 			robot_rpc_message_interface_layer_port = 9001;
 		}
 	}
-	inline void get_robot_test_config() {
+	void get_robot_test_config() {
 		vector<string>values{""};
-		config_parser::config_parser::get_instance().get_value("robot_test", "simulator_path", values);
-		robot_test_simulator_path = values[0];
-		if (robot_test_simulator_path.empty()) {
-			robot_test_simulator_path = "/opt/zeg_robot_simulator/bin/zeg_robot_simulator";
+		config_parser::config_parser::get_instance().get_value("robot_test", "navigation_escort_path", values);
+		robot_test_navigation_escort_path = values[0];
+		if (robot_test_navigation_escort_path.empty()) {
+			robot_test_navigation_escort_path = "/opt/zeg_robot_navigation_escort/zeg_robot_navigation_escort/bin/zeg_robot_navigation_escort";
 		}
-		config_parser::config_parser::get_instance().get_value("robot_test", "simulator_name", values);
-		robot_test_simulator_name = values[0];
-		if (robot_test_simulator_name.empty()) {
-			robot_test_simulator_name = "zeg_robot_simulator";
+		config_parser::config_parser::get_instance().get_value("robot_test", "navigation_escort_name", values);
+		robot_test_navigation_escort_name = values[0];
+		if (robot_test_navigation_escort_name.empty()) {
+			robot_test_navigation_escort_name = "zeg_robot_navigation_escort";
 		}
 
 		config_parser::config_parser::get_instance().get_value("robot_test", "message_interface_path", values);
@@ -88,17 +90,29 @@ private:
 			robot_test_message_interface_name = "zeg_message_interface";
 		}
 	}
+	inline void get_schedule_server_config() {
+		vector<string>values{""};
+		config_parser::config_parser::get_instance().get_value("schedule_server", "ip", values);
+		schedule_server_ip = values[0];
+		config_parser::config_parser::get_instance().get_value("schedule_server", "port", values);
+		schedule_server_port = atoi(values[0].c_str());
+		if (schedule_server_port <= 0) {
+			schedule_server_port = 7780;
+		}
+	}
 private:
 	static zeg_config config_;
 public:
 	int udp_server_port;
-	int robot_rpc_host_layer_port;
+	int robot_rpc_navigation_escort_layer_port;
 	int robot_rpc_message_interface_layer_port;
+	int schedule_server_port;
 
-	string robot_test_simulator_path;
-	string robot_test_simulator_name;
+	string robot_test_navigation_escort_path;
+	string robot_test_navigation_escort_name;
 	string robot_test_message_interface_path;
 	string robot_test_message_interface_name;
+	string schedule_server_ip;
 	unique_ptr<message_communicate_entity>udp_unicast_server_ptr_;
 public:
 	const char *RPC_SERVER_IP = "127.0.0.1";

@@ -36,13 +36,13 @@ public:
 		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
 	}
 	virtual int recv(char *recv_buf, int buf_len) override {
-		if (buf_len <= 0 || buf_len > BUFSIZ) {
+		if (buf_len <= 0 || buf_len > BUF_SIZE) {
 			return -1;
 		}
-		char buf[BUFSIZ] = "";
+		char buf[BUF_SIZE] = "";
 		socklen_t size = sizeof(struct sockaddr);
 		int len = recvfrom(sock_fd_, buf, sizeof(buf), 0, (struct sockaddr *)&client_addr_, &size);
-		if (len <= BUFSIZ && len > 0) {
+		if (len <= BUF_SIZE && len > 0) {
 			len = min(len, buf_len);
 			memcpy(recv_buf, buf, len);
 		}
@@ -53,6 +53,8 @@ private:
 	int port_;
 	const char *unicast_address_;
 	struct sockaddr_in client_addr_;
+private:
+	const int BUF_SIZE = 1024;
 };
 REGISTER_MESSAGE_COMMUNICATE_ENTITY(udp_unicast_client, "udp.unicast.client");
 

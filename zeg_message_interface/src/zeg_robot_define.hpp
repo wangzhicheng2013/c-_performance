@@ -20,14 +20,14 @@ struct zeg_robot_header {
 		timestamp(c) {
 
 	}
-	string type;				// zeg_robot
+	string type;				// zeg.robot
 	string robot_id;
 	uint64_t timestamp;
 	MSGPACK_DEFINE(type, robot_id, timestamp);
 };
 struct zeg_robot_point {
 	zeg_robot_point() {
-		x= y = 0;
+		x = y = 0;
 	}
 	zeg_robot_point(double a, double b) :
 		x(a),
@@ -62,6 +62,16 @@ struct zeg_command_unpack_struct {
 	const zeg_robot_header *unpack_header;
 	int unpack_len;
 	size_t unpack_offset;
+};
+struct zeg_robot_navigation_lock_point {
+	string task_id;
+	vector<zeg_robot_point>locked_points;
+	MSGPACK_DEFINE(task_id, locked_points);
+};
+struct zeg_robot_navigation_lock_point_ack {
+	string task_id;
+	vector<zeg_robot_point>locked_points;
+	MSGPACK_DEFINE(task_id, locked_points);
 };
 }
 
