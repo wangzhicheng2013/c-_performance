@@ -9,18 +9,18 @@ public:
 		static zeg_robot_navigation_lock_point_sender sender;
 		return sender;
 	}
-	bool send(const zeg_robot_header &header, const zeg_robot_navigation_lock_point &body) {
+	bool send(const zeg_robot_header &header, const zeg_robot_navigation_lock_point &body, unique_ptr<message_communicate_entity>&udp_sever_ptr) {
 		msgpack::sbuffer buffer_header;
 		msgpack::sbuffer buffer_body;
 		msgpack::pack(buffer_header, header);
 		msgpack::pack(buffer_body, body);
 		string send_str(buffer_header.data(), buffer_header.size());
 		send_str.append(buffer_body.data(), buffer_body.size());
-		static auto &sender = zeg_config::get_instance().udp_unicast_server_ptr_;
-		int size = reinterpret_cast<udp_unicast_server *>(sender.get())->send_to_schedule_server(send_str.c_str(), send_str.size());
+		int size = udp_sever_ptr->send(send_str.c_str(), send_str.size());
 		if (size > 1024) {
 			LOG_CRIT << "send size over 1K.";
 		}
+		LOG_INFO << "send lock point size = " << size;
 		if (send_str.size() != size) {
 			LOG_CRIT << "send size = " << size << " need send size = " << send_str.size();
 			return false;

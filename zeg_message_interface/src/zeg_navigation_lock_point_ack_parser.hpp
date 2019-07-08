@@ -1,6 +1,6 @@
 #ifndef SRC_ZEG_NAVIGATION_LOCK_POINT_ACK_PARSER_HPP_
 #define SRC_ZEG_NAVIGATION_LOCK_POINT_ACK_PARSER_HPP_
-#include "zeg_command_parser_maker.hpp"
+#include "zeg_robot_command_parser_maker.hpp"
 namespace zeg_message_interface {
 class zeg_navigation_lock_point_ack_parser : public zeg_command_parser {
 public:
@@ -17,7 +17,7 @@ public:
 			return false;
 		}
 		LOG_INFO << cmd.task_id << " parse navigation lock ack ok.";
-		call_report_lock_point_to_navigation_escort(unpack_cmd, cmd);
+	//	call_report_lock_point_to_navigation_escort(unpack_cmd, cmd);
 		return true;
 	}
 private:

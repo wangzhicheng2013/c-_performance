@@ -6,10 +6,6 @@
 #include "msgpack.hpp"
 namespace zeg_message_interface {
 using namespace std;
-enum {
-	NAVIGATION_COMMAND,
-	LOCALIZATION_COMMAND
-};
 struct zeg_robot_header {
 	zeg_robot_header() {
 		timestamp = 0;
@@ -20,7 +16,7 @@ struct zeg_robot_header {
 		timestamp(c) {
 
 	}
-	string type;				// zeg.robot
+	string type;
 	string robot_id;
 	uint64_t timestamp;
 	MSGPACK_DEFINE(type, robot_id, timestamp);
@@ -36,17 +32,50 @@ struct zeg_robot_point {
 	double x, y;
 	MSGPACK_DEFINE(x, y);
 };
-struct zeg_robot_navigation_command {
-	string task_id;
-	vector<zeg_robot_point>points;
-	MSGPACK_DEFINE(task_id, points);
+struct zeg_robot_basic_info {
+	zeg_robot_basic_info() {
+		cur_theta = 0;
+        state = 0;
+        battery_percentage = 0;
+    }
+	zeg_robot_basic_info(const zeg_robot_point &a,
+			zeg_robot_point &b,
+			zeg_robot_point &c,
+			double d,
+			uint32_t e,
+			double f) : last_point(a), next_point(b), cur_point(c), cur_theta(d), state(e), battery_percentage(f) {
+
+	}
+    zeg_robot_point last_point;
+	zeg_robot_point next_point;
+	zeg_robot_point cur_point;
+	double cur_theta;
+	uint32_t state;
+	double battery_percentage;
+	MSGPACK_DEFINE(last_point, next_point, cur_point, cur_theta, state, battery_percentage);
 };
-struct zeg_robot_navigation_command_ack {
+struct zeg_robot_task {
+	string task_id;
+	uint32_t task_type;
+	vector<zeg_robot_point>points;
+	double last_point_theta;
+	MSGPACK_DEFINE(task_id, task_type, points, last_point_theta);
+};
+struct zeg_robot_task_ack {
 	string task_id;
 	MSGPACK_DEFINE(task_id);
 };
-struct zeg_command_unpack_struct {
-	zeg_command_unpack_struct(msgpack::unpacked *a,
+struct zeg_robot_task_finish {
+	string task_id;
+	uint32_t task_state;
+	MSGPACK_DEFINE(task_id, task_state);
+};
+struct zeg_robot_task_finish_ack {
+	string task_id;
+	MSGPACK_DEFINE(task_id);
+};
+struct zeg_robot_command_unpack_struct {
+	zeg_robot_command_unpack_struct(msgpack::unpacked *a,
 			const char *b,
 			const zeg_robot_header *c,
 			int d,
@@ -72,6 +101,15 @@ struct zeg_robot_navigation_lock_point_ack {
 	string task_id;
 	vector<zeg_robot_point>locked_points;
 	MSGPACK_DEFINE(task_id, locked_points);
+};
+struct zeg_robot_navigation_free_point {
+	string task_id;
+	vector<zeg_robot_point>freed_points;
+	MSGPACK_DEFINE(task_id, freed_points);
+};
+struct zeg_robot_navigation_free_point_ack {
+	string task_id;
+	MSGPACK_DEFINE(task_id);
 };
 }
 

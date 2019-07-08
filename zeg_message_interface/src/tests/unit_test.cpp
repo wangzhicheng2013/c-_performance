@@ -1,3 +1,4 @@
+
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <stdio.h>
 #include <time.h>
@@ -13,18 +14,16 @@
 #include "zeg_robot_define.hpp"
 #include "zeg_config.hpp"
 #include "base_thread.hpp"
-#include "zeg_command_processor.hpp"
-#include "zeg_recv_command.hpp"
+#include "../zeg_robot_command_processor.hpp"
 #include "zeg_robot_navigation_lock_point_sender.hpp"
+#include "udp_unicast_server.hpp"
 #include "udp_unicast_client.hpp"
+#include "udp_server.hpp"
 using namespace zeg_message_interface;
 namespace fs = experimental::filesystem;
 TEST_CASE("testing init conf") {
-	CHECK(9003 == zeg_config::get_instance().robot_rpc_navigation_escort_layer_port);
 	CHECK(9001 == zeg_config::get_instance().robot_rpc_message_interface_layer_port);
 	CHECK(7780 == zeg_config::get_instance().udp_server_port);
-	CHECK(7780 == zeg_config::get_instance().schedule_server_port);
-	CHECK(false == zeg_config::get_instance().schedule_server_ip.empty());
 }
 class my_class {
 public:
@@ -214,8 +213,7 @@ TEST_CASE("testing process command") {
 	bool no_exception = true;
 	string ack_str;
 	try {
-		string str(buf, len);
-		ack_str = client.call<string>("process_command", str);
+		zeg_command_processor::get_instance().process(buf, len, ack_str);
 	}
 	catch (...) {
 		no_exception = false;
@@ -243,8 +241,6 @@ TEST_CASE("testing process command") {
 		no_excepption = false;
 	}
 	CHECK(true == no_excepption);
-
-	kill_program(zeg_config::get_instance().robot_test_message_interface_name.c_str());
 }
 udp_unicast_server udp_unicast_server_obj;
 udp_unicast_client udp_unicast_client_obj;
@@ -296,4 +292,178 @@ TEST_CASE("testing unicast send recv") {
 	th2.join();
 	CHECK(recv_str == "AAA");
 	CHECK(recv_str1 == str);
+}
+void pack_navigation_command(string &cmd_str) {
+	zeg_robot_header header("zeg.robot.navigation.command", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+	zeg_robot_point p0(1, 2);
+	zeg_robot_point p1(11.2, 21.22);
+	zeg_robot_navigation_command cmd;
+	cmd.task_id = "007";
+	cmd.points.emplace_back(p0);
+	cmd.points.emplace_back(p1);
+
+	msgpack::sbuffer buffer_header;
+	msgpack::sbuffer buffer_body;
+	msgpack::pack(buffer_header, header);
+	msgpack::pack(buffer_body, cmd);
+
+	cmd_str.assign(buffer_header.data(), buffer_header.size());
+	cmd_str.append(buffer_body.data(), buffer_body.size());
+}
+template<typename cmd_type>
+bool unpack_command(const string &cmd_str, zeg_robot_header &header, cmd_type &cmd) {
+	size_t offset = 0;
+	msgpack::unpacked msg;
+	msgpack::unpack(&msg, cmd_str.c_str(), cmd_str.size(), &offset);
+	msgpack::object obj = msg.get();
+	bool no_excepption = true;
+	try {
+		obj.convert(&header);
+		msgpack::unpack(&msg, cmd_str.c_str(), cmd_str.size(), &offset);
+		obj = msg.get();
+		obj.convert(&cmd);
+	}
+	catch (...) {
+		no_excepption = false;
+	}
+	return no_excepption;
+}
+TEST_CASE("testing udp server send and recv navigation command") {
+	string cmd_str;
+	pack_navigation_command(cmd_str);
+	udp_unicast_client_obj.set_port(7780);
+	CHECK(udp_unicast_client_obj.send(cmd_str.c_str(), cmd_str.size()) > 0);
+	char buf[1024] = "";
+	int recv_len = udp_unicast_client_obj.recv(buf, sizeof(buf));
+	CHECK(recv_len > 0);
+	zeg_robot_header header;
+	zeg_robot_navigation_command_ack cmd;
+	string str(buf, recv_len);
+	unpack_command(str, header, cmd);
+	CHECK("007" == header.robot_id);
+	CHECK("007" == cmd.task_id);
+}
+void request_lock_point_thread() {
+	zeg_robot_header header("zeg.robot.navigation.lock.point", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+	zeg_robot_point p0(1, 2);
+	zeg_robot_point p1(11.2, 21.22);
+	zeg_robot_navigation_lock_point cmd;
+	cmd.task_id = "007";
+	cmd.locked_points.emplace_back(p0);
+	cmd.locked_points.emplace_back(p1);
+
+	rpc_client client(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_message_interface_layer_port);
+	CHECK(true == client.connect(1));
+	bool no_exception = true;
+	bool res = true;
+	try {
+		res = client.call<bool>("send_navigation_lock_point", header, cmd);
+	}
+	catch (...) {
+		no_exception = false;
+	}
+}
+TEST_CASE("testing udp server send and recv navigation lock point command") {
+	string cmd_str;
+	pack_navigation_command(cmd_str);
+	udp_unicast_client_obj.set_port(7780);
+	CHECK(udp_unicast_client_obj.send(cmd_str.c_str(), cmd_str.size()) > 0);
+	char buf[1024] = "";
+	int recv_len = udp_unicast_client_obj.recv(buf, sizeof(buf));
+	CHECK(recv_len > 0);
+	zeg_robot_header header;
+	zeg_robot_navigation_command_ack cmd;
+	string str(buf, recv_len);
+	unpack_command(str, header, cmd);
+	CHECK("007" == header.robot_id);
+	CHECK("007" == cmd.task_id);
+	thread th(request_lock_point_thread);
+	th.join();
+	recv_len = udp_unicast_client_obj.recv(buf, sizeof(buf));
+	CHECK(recv_len > 0);
+	str.assign(buf, recv_len);
+	zeg_robot_navigation_lock_point cmd_lock_point;
+	CHECK(true == unpack_command(str, header, cmd_lock_point));
+	CHECK("007" == header.robot_id);
+	CHECK("007" == cmd_lock_point.task_id);
+	REQUIRE(2 == cmd_lock_point.locked_points.size());
+	CHECK(1 == cmd_lock_point.locked_points[0].x);
+	CHECK(2 == cmd_lock_point.locked_points[0].y);
+	CHECK(11.2 == cmd_lock_point.locked_points[1].x);
+	CHECK(21.22 == cmd_lock_point.locked_points[1].y);
+}
+int loss_pack = 0;
+void navigation_test_client_thread() {
+	string cmd_str;
+	pack_navigation_command(cmd_str);
+	udp_unicast_client udp_unicast_client_obj;
+	udp_unicast_client_obj.set_port(7780);
+	CHECK(true == udp_unicast_client_obj.init());
+	CHECK(cmd_str.size() == udp_unicast_client_obj.send(cmd_str.c_str(), cmd_str.size()));
+	char buf[1024] = "";
+	int recv_len = udp_unicast_client_obj.recv(buf, sizeof(buf));
+	if (recv_len < 0) {
+		++loss_pack;
+		return;
+	}
+	zeg_robot_header header;
+	zeg_robot_navigation_command_ack cmd;
+	string str(buf, recv_len);
+	unpack_command(str, header, cmd);
+	CHECK("007" == header.robot_id);
+	CHECK("007" == cmd.task_id);
+	request_lock_point_thread();
+	recv_len = udp_unicast_client_obj.recv(buf, sizeof(buf));
+	if (recv_len < 0) {
+		++loss_pack;
+		return;
+	}
+	str.assign(buf, recv_len);
+	zeg_robot_navigation_lock_point cmd_lock_point;
+	CHECK(true == unpack_command(str, header, cmd_lock_point));
+	CHECK("007" == header.robot_id);
+	CHECK("007" == cmd_lock_point.task_id);
+	if (cmd_lock_point.locked_points.size() <= 0) {
+		cerr <<  "lock point empty." << endl;
+		return;
+	}
+	CHECK(2 == cmd_lock_point.locked_points.size());
+	CHECK(1 == cmd_lock_point.locked_points[0].x);
+	CHECK(2 == cmd_lock_point.locked_points[0].y);
+}
+TEST_CASE("testing udp server send and recv navigation lock point command with mutiple clients") {
+	const int thread_num = 10;
+	vector<thread>threads;
+	for (int i = 0;i < thread_num;i++) {
+		threads.emplace_back(thread(navigation_test_client_thread));
+	}
+	for (auto &it : threads) {
+		if (it.joinable()) {
+			it.join();
+		}
+	}
+	cout << "loss rate = " << 1.0 * loss_pack / thread_num << endl;
+}
+TEST_CASE("testing report_robot_basic_info") {
+	zeg_robot_header header("zeg.robot.basic.info", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+	zeg_robot_basic_info body;
+	body.state = 1;
+	body.cur_point.x = 10;
+	body.cur_point.y = 10;
+	body.cur_theta = 10;
+	body.battery_percentage = 100;
+
+	rpc_client client(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_message_interface_layer_port);
+	CHECK(true == client.connect(1));
+	bool no_exception = true;
+	bool res = true;
+	try {
+		res = client.call<bool>("report_robot_basic_info", header, body);
+	}
+	catch (std::exception &e) {
+		cout << e.what() << endl;
+		no_exception = false;
+	}
+	res = res && no_exception;
+	CHECK(true == res);
 }
