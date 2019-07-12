@@ -9,6 +9,8 @@ class udp_server : public message_communicate_entity {
 public:
 	udp_server() {
 		sock_fd_ = -1;
+		memset(&broadcast_addr_, 0, sizeof(broadcast_addr_));
+		make_broadcast_addr();
 	}
 	virtual ~udp_server() {
 		for (auto &it : threads_) {
@@ -43,7 +45,8 @@ public:
 			try {
 				threads_[i] = thread(std::bind(&udp_server::start_udp_thread, this, i));
 			}
-			catch (...) {
+			catch (std::exception &e) {
+				LOG_CRIT << e.what();
 				return false;
 			}
 		}
@@ -55,11 +58,20 @@ public:
 	virtual int recv(char *recv_buf, int buf_len) override {
 		return -1;
 	}
+	int send_broadcast(const char *buf, int len) {
+		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&broadcast_addr_, sizeof(broadcast_addr_));
+	}
 private:
 	void start_udp_thread(int index) {
 		udp_threads_[index]->udp_dispatch_event();
 	}
+	inline void make_broadcast_addr() {
+		broadcast_addr_.sin_family = AF_INET;
+		broadcast_addr_.sin_port = htons(config_.port_);
+		broadcast_addr_.sin_addr.s_addr = inet_addr("255.255.255.255");
+	}
 private:
+	struct sockaddr_in broadcast_addr_;
 	socket_config config_;
 	vector<unique_ptr<udp_thread> >udp_threads_;
 	vector<thread>threads_;

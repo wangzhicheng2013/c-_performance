@@ -27,10 +27,10 @@ public:
 		}
 		struct sockaddr_in addr = {0};
 		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = inet_addr(config.ip_.c_str());
+		addr.sin_addr.s_addr = htonl(INADDR_ANY);
 		addr.sin_port = htons(config.port_);
 		if (bind(sock_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-			cerr << "socket bind failed on ip = " << config.ip_ << " port = " << config.port_ << endl;
+			cerr << "socket bind failed on port = " << config.port_ << endl;
 			return -1;
 		}
 		if (TCP == config.type_) {
@@ -51,6 +51,13 @@ public:
 		}
 		return sock_fd;
 	}
+	inline bool set_sock_broadcast(int sock_fd) {
+		if (sock_fd < 0) {
+			return false;
+		}
+		int so_broadcast = 1;
+		return setsockopt(sock_fd, SOL_SOCKET, SO_BROADCAST, (char *)&so_broadcast, sizeof(so_broadcast)) >= 0;
+	}
 	bool close_socket(int &sock_fd) {
 		if (sock_fd >= 0) {
 			close(sock_fd);
@@ -65,6 +72,10 @@ private:
 		switch (type) {
 		case UDP:
 			sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
+			if (false == set_sock_broadcast(sock_fd)) {
+				return -1;
+			}
+			return sock_fd;
 			break;
 		case TCP:
 			sock_fd = socket(AF_INET, SOCK_STREAM, 0);

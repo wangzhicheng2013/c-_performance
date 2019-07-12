@@ -7,7 +7,9 @@ public:
 		sock_fd_ = -1;
 		port_ = 7780;
 		broadcast_address_ = "255.255.255.255";
+		memset(&dest_addr_, 0, sizeof(dest_addr_));
 		memset(&client_addr_, 0, sizeof(client_addr_));
+		make_dest_addr();
 	}
 	~udp_broadcast_client() {
 		if (sock_fd_ >= 0) {
@@ -28,16 +30,14 @@ public:
 	}
 	inline void set_port(int port) {
 		port_ = port;
+		make_dest_addr();
 	}
 	inline void set_broadcast_address(const char *address) {
 		broadcast_address_ = address;
+		make_dest_addr();
 	}
 	virtual int send(const char *buf, int len) override {
-		struct sockaddr_in dest_addr = {0};
-		dest_addr.sin_family = AF_INET;
-		dest_addr.sin_port = htons(port_);
-		dest_addr.sin_addr.s_addr = inet_addr(broadcast_address_);
-		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+		return sendto(sock_fd_, buf, len, 0, (struct sockaddr *)&dest_addr_, sizeof(dest_addr_));
 	}
 	virtual int recv(char *recv_buf, int buf_len) override {
 		if (buf_len <= 0 || buf_len > BUF_SIZE) {
@@ -53,9 +53,16 @@ public:
 		return len;
 	}
 private:
+	inline void make_dest_addr() {
+		dest_addr_.sin_family = AF_INET;
+		dest_addr_.sin_port = htons(port_);
+		dest_addr_.sin_addr.s_addr = inet_addr(broadcast_address_);
+	}
+private:
 	int sock_fd_;
 	int port_;
 	const char *broadcast_address_;
+	struct sockaddr_in dest_addr_;
 	struct sockaddr_in client_addr_;
 private:
 	const int BUF_SIZE = 1024;

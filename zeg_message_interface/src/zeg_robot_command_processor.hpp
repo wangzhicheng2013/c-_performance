@@ -2,8 +2,10 @@
 #define SRC_ZEG_ROBOT_COMMAND_PROCESSOR_HPP_
 #include "zeg_robot_define.hpp"
 #include "zeg_config.hpp"
-#include "zeg_navigation_lock_point_ack_parser.hpp"
 #include "zeg_robot_task_parser.hpp"
+#include "zeg_robot_point_lock_ack_parser.hpp"
+#include "zeg_robot_point_free_ack_parser.hpp"
+#include "zeg_robot_task_finish_ack_parser.hpp"
 namespace zeg_message_interface {
 class zeg_robot_command_processor {
 public:
@@ -36,10 +38,12 @@ public:
 			LOG_CRIT << e.what();
 			return false;
 		}
+		if (header.robot_id != zeg_config::get_instance().robot_id) {
+			res = false;
+		}
 		return res;
 	}
 };
 }
-
 
 #endif /* SRC_ZEG_ROBOT_COMMAND_PROCESSOR_HPP_ */

@@ -25,7 +25,4 @@ private:
 };
 }
 
-
-
-
 #endif /* SRC_ZEG_ROBOT_COMMAND_PACK_HPP_ */

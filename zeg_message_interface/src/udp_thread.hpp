@@ -11,14 +11,14 @@ public:
 		event_ = nullptr;
 	}
 	virtual ~udp_thread() {
+		if (event_ != nullptr) {
+			event_free(event_);
+			event_ = nullptr;
+		}
 		if (base_ != nullptr) {
 			event_base_loopexit(base_, NULL);
 			event_base_free(base_);
 			base_ = nullptr;
-		}
-		if (event_ != nullptr) {
-			event_free(event_);
-			event_ = nullptr;
 		}
 	}
 public:
@@ -55,8 +55,8 @@ protected:
 	int sock_fd_;
 	event_base *base_;
 	event *event_;
-protected:
-	const int buffer_size = 1024;
+public:
+	static const int buffer_size = 1024;
 };
 
 

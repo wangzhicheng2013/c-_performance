@@ -8,7 +8,7 @@
 namespace zeg_message_interface {
 class zeg_robot_command_parser_maker {
 public:
-	static zeg_robot_command_parser_maker *make(const string &parser_type) {
+	static zeg_robot_command_parser *make(const string &parser_type) {
 		auto it = map_.find(parser_type);
 		if (end(map_) == it) {
 			return nullptr;
@@ -34,6 +34,9 @@ public:
 	};
 private:
 	zeg_robot_command_parser_maker() = default;
+	zeg_robot_command_parser_maker(const zeg_robot_command_parser_maker &) = delete;
+	zeg_robot_command_parser_maker & operator = (const zeg_robot_command_parser_maker &) = delete;
+	zeg_robot_command_parser_maker(zeg_robot_command_parser_maker &&) = delete;
 	~zeg_robot_command_parser_maker() = default;
 private:
 	inline static zeg_robot_command_parser_maker &get() {

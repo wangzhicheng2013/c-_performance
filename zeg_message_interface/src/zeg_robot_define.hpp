@@ -74,6 +74,25 @@ struct zeg_robot_task_finish_ack {
 	string task_id;
 	MSGPACK_DEFINE(task_id);
 };
+struct zeg_robot_point_lock {
+	string task_id;
+	vector<zeg_robot_point>locked_points;
+	MSGPACK_DEFINE(task_id, locked_points);
+};
+struct zeg_robot_point_lock_ack {
+	string task_id;
+	vector<zeg_robot_point>locked_points;
+	MSGPACK_DEFINE(task_id, locked_points);
+};
+struct zeg_robot_point_free {
+	string task_id;
+	vector<zeg_robot_point>freed_points;
+	MSGPACK_DEFINE(task_id, freed_points);
+};
+struct zeg_robot_point_free_ack {
+	string task_id;
+	MSGPACK_DEFINE(task_id);
+};
 struct zeg_robot_command_unpack_struct {
 	zeg_robot_command_unpack_struct(msgpack::unpacked *a,
 			const char *b,
@@ -91,25 +110,6 @@ struct zeg_robot_command_unpack_struct {
 	const zeg_robot_header *unpack_header;
 	int unpack_len;
 	size_t unpack_offset;
-};
-struct zeg_robot_navigation_lock_point {
-	string task_id;
-	vector<zeg_robot_point>locked_points;
-	MSGPACK_DEFINE(task_id, locked_points);
-};
-struct zeg_robot_navigation_lock_point_ack {
-	string task_id;
-	vector<zeg_robot_point>locked_points;
-	MSGPACK_DEFINE(task_id, locked_points);
-};
-struct zeg_robot_navigation_free_point {
-	string task_id;
-	vector<zeg_robot_point>freed_points;
-	MSGPACK_DEFINE(task_id, freed_points);
-};
-struct zeg_robot_navigation_free_point_ack {
-	string task_id;
-	MSGPACK_DEFINE(task_id);
 };
 }
 

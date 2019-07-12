@@ -31,6 +31,7 @@ public:
 		}
 		get_udp_server_config();
 		get_rpc_config();
+		get_robot_config();
 		get_robot_test_config();
 	}
 private:
@@ -67,6 +68,14 @@ private:
 			robot_rpc_host_layer_port = 8000;
 		}
 	}
+	inline void get_robot_config() {
+		vector<string>values{""};
+		config_parser::config_parser::get_instance().get_value("robot", "id", values);
+		robot_id = values[0];
+		if (robot_id.empty()) {
+			LOG_CRIT << "robot id is empty.";
+		}
+	}
 	void get_robot_test_config() {
 		vector<string>values{""};
 		config_parser::config_parser::get_instance().get_value("robot_test", "message_interface_path", values);
@@ -87,6 +96,7 @@ public:
 	int robot_rpc_message_interface_layer_port;
 	int robot_rpc_host_layer_port;
 
+	string robot_id;
 	string robot_test_message_interface_path;
 	string robot_test_message_interface_name;
 
