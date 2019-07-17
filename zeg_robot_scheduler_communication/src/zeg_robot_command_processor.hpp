@@ -1,8 +1,10 @@
 #ifndef SRC_ZEG_ROBOT_COMMAND_PROCESSOR_HPP_
 #define SRC_ZEG_ROBOT_COMMAND_PROCESSOR_HPP_
 #include "zeg_robot_define.hpp"
-#include "zeg_config.hpp"
 #include "zeg_robot_basic_info_parser.hpp"
+#include "zeg_robot_config.hpp"
+#include "zeg_robot_task_ack_parser.hpp"
+#include "zeg_robot_point_lock_parser.hpp"
 namespace zeg_robot_scheduler_communication {
 class zeg_robot_command_processor {
 public:

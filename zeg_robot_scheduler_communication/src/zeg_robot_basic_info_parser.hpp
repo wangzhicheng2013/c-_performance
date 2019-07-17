@@ -26,7 +26,7 @@ public:
 		return call_report_robot_basic_info_to_tcs(unpack_cmd, basic_info);
 	}
 	bool call_report_robot_basic_info_to_tcs(const zeg_robot_command_unpack_struct *unpack_cmd, const zeg_robot_basic_info &basic_info) {
-		static rpc_client client(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_tcs_port);
+		static rpc_client client(zeg_robot_config::zeg_robot_config::get_instance().RPC_SERVER_IP, zeg_robot_config::get_instance().robot_rpc_tcs_port);
 		static bool connected = false;
 		if (false == connected) {
 			connected = client.connect(1);

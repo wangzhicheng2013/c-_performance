@@ -1,27 +1,62 @@
 #ifndef SRC_ZEG_ROBOT_TASK_ESCORT_HPP_
 #define SRC_ZEG_ROBOT_TASK_ESCORT_HPP_
-#include "zeg_robot_command_unpack.hpp"
-#include "udp_server.hpp"
+#include <vector>
+#include <unordered_map>
+#include <mutex>
+#include <thread>
+#include "zeg_robot_command_pack.hpp"
+#include "zeg_robot_update_address.hpp"
+#include "blockingconcurrentqueue.h"
+#include "zeg_robot_config.hpp"
 namespace zeg_robot_scheduler_communication {
+using namespace moodycamel;
 class zeg_robot_task_escort {
 public:
 	inline static zeg_robot_task_escort &get() {
 		static zeg_robot_task_escort obj;
 		return obj;
 	}
-	void send_task_to_robot(const zeg_robot_header &header,
-			const zeg_robot_task &robot_task, unique_ptr<message_communicate_entity>&udp_server_ptr) {
-		string pack_str;
-		zeg_robot_command_pack<zeg_robot_task>::get_instance().pack(header, robot_task, pack_str);
-		auto client_ptr = zeg_robot_update_address::get().get(header.robot_id);
-		reinterpret_cast<udp_server *>(udp_server_ptr.get())->send_to_client(pack_str.c_str(), pack_str.size(), *client_ptr);
+	inline void remove_robot_task(const string &task_id) {
+		lock_guard<mutex>lk(lock_);
+		map_.erase(task_id);
+	}
+	inline bool get_task_pack_str(const string &task_id, string &pack_str) {
+		auto it = map_.find(task_id);
+		if (end(map_) == it) {
+			return false;
+		}
+		pack_str = it->second;
+		return true;
+	}
+	void store_robot_task(const string &task_id, const string &pack_str) {
+		unique_lock<mutex>lk(lock_);
+		auto it = map_.find(task_id);
+		if (end(map_) != it) {
+			return;
+		}
+		if (map_.size() > zeg_robot_config::get_instance().robot_task_escort_message_backlog) {
+			LOG_CRIT << "task count for map is up to max.";
+			return;
+		}
+		map_[task_id] = pack_str;
+		lk.unlock();
+		if (queue_.size_approx() > zeg_robot_config::get_instance().robot_task_escort_message_backlog) {
+			LOG_CRIT << "task count for queue is up to max.";
+			return;
+		}
+		queue_.enqueue(task_id);
+	}
+	void get_taskid(string &taskid) {
+		queue_.wait_dequeue(taskid);
 	}
 private:
 	zeg_robot_task_escort() = default;
 	~zeg_robot_task_escort() = default;
+private:
+	unordered_map<string, string>map_;			// key -- task id value -- pack string
+	mutex lock_;
+	BlockingConcurrentQueue<string>queue_;		// task id
 };
 }
-
-
 
 #endif /* SRC_ZEG_ROBOT_TASK_ESCORT_HPP_ */

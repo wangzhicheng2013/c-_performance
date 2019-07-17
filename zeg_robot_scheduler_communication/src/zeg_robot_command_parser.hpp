@@ -1,9 +1,9 @@
 #ifndef SRC_ZEG_ROBOT_COMMAND_PARSER_HPP_
 #define SRC_ZEG_ROBOT_COMMAND_PARSER_HPP_
 #include "zeg_robot_define.hpp"
-#include "zeg_config.hpp"
 #include "rpc_client.hpp"
 #include "codec.h"
+#include "zeg_robot_config.hpp"
 namespace zeg_robot_scheduler_communication {
 using namespace rest_rpc;
 using namespace rest_rpc::rpc_service;

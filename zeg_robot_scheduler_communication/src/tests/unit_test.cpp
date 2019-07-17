@@ -11,12 +11,8 @@
 #include "doctest.hpp"
 #include "common_utility.hpp"
 #include "zeg_robot_define.hpp"
-#include "zeg_config.hpp"
+#include "../zeg_robot_config.hpp"
 #include "base_thread.hpp"
-#include "zeg_robot_command_processor.hpp"
-#include "udp_unicast_server.hpp"
-#include "udp_unicast_client.hpp"
-#include "udp_server.hpp"
 #include "zeg_robot_update_address.hpp"
 using namespace zeg_robot_scheduler_communication;
 TEST_CASE("testing zeg_robot_update_address update") {
@@ -51,9 +47,13 @@ TEST_CASE("testing zeg_robot_update_address get") {
 	CHECK(1000 == p->sin_port);
 }
 TEST_CASE("testing init conf") {
-	CHECK(11000 == zeg_config::get_instance().robot_rpc_scheduler_communication_port);
-	CHECK(10000 == zeg_config::get_instance().robot_rpc_tcs_port);
-	CHECK(7780 == zeg_config::get_instance().udp_server_port);
+	CHECK(11000 == zeg_robot_config::get_instance().robot_rpc_scheduler_communication_port);
+	CHECK(10000 == zeg_robot_config::get_instance().robot_rpc_tcs_port);
+	CHECK(7781 == zeg_robot_config::get_instance().udp_server_port);
+	CHECK(1 == zeg_robot_config::get_instance().robot_task_escort_sleep_interval);
+	CHECK(3 == zeg_robot_config::get_instance().robot_task_escort_try_cnt);
+	CHECK(10 == zeg_robot_config::get_instance().robot_task_escort_message_backlog);
+	CHECK(6 == zeg_robot_config::get_instance().robot_task_escort_threads);
 }/*
 class my_class {
 public:
@@ -146,7 +146,7 @@ TEST_CASE("testing zeg_command_processor process1") {
 	CHECK(true == ack_str.empty());
 }
 void start_message_interface() {
-	run_program(zeg_config::get_instance().robot_test_message_interface_path.c_str());
+	run_program(zeg_robot_config::get_instance().robot_test_message_interface_path.c_str());
 }
 void pack_zeg_robot_task(string &pack_str) {
 	zeg_robot_header header("zeg.robot.task", "007", chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
@@ -190,7 +190,7 @@ TEST_CASE("testing process command") {
 	pack_zeg_robot_task(pack_str);
 	int len = pack_str.size();
 
-	rpc_client client(zeg_config::zeg_config::get_instance().RPC_SERVER_IP, zeg_config::get_instance().robot_rpc_message_interface_layer_port);
+	rpc_client client(zeg_robot_config::zeg_robot_config::get_instance().RPC_SERVER_IP, zeg_robot_config::get_instance().robot_rpc_message_interface_layer_port);
 	CHECK(true == client.connect(1));
 	bool no_exception = true;
 	string ack_str;
@@ -261,5 +261,5 @@ TEST_CASE("testing udp server send and recv robot task") {
 	char buf[1024] = "";
 	int recv_len = udp_unicast_client_obj.recv(buf, sizeof(buf));
 	CHECK(recv_len < 0);
-	kill_program(zeg_config::get_instance().robot_test_message_interface_name.c_str());
+	kill_program(zeg_robot_config::get_instance().robot_test_message_interface_name.c_str());
 }*/
