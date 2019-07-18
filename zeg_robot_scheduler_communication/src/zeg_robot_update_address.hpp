@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <memory>
+#include "NanoLog.hpp"
 namespace zeg_robot_scheduler_communication {
 using namespace std;
 class zeg_robot_update_address {
@@ -17,13 +18,16 @@ public:
 		auto it = map_.find(robot_id);
 		if (end(map_) == it) {
 			map_[robot_id] = client_addr;
+			LOG_INFO << "robot id = " << robot_id << " robot ip = " << inet_ntoa(client_addr.sin_addr) << ":" << client_addr.sin_port;
 			return;
 		}
 		if (client_addr.sin_port != it->second.sin_port) {
 			it->second.sin_port = client_addr.sin_port;
+			LOG_INFO << "robot id = " << robot_id << " updated robot ip = " << inet_ntoa(client_addr.sin_addr) << ":" << client_addr.sin_port;
 		}
 		if (client_addr.sin_addr.s_addr != it->second.sin_addr.s_addr) {
 			it->second.sin_addr.s_addr = client_addr.sin_addr.s_addr;
+			LOG_INFO << "robot id = " << robot_id << " updated robot ip = " << inet_ntoa(client_addr.sin_addr) << ":" << client_addr.sin_port;
 		}
 	}
 	const struct sockaddr_in *get(const string &robot_id) {

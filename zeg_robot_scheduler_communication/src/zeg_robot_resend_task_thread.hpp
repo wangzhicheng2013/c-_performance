@@ -29,7 +29,7 @@ private:
 		int try_cnt = zeg_robot_config::get_instance().robot_task_escort_try_cnt;
 		int sleep_interval = zeg_robot_config::get_instance().robot_task_escort_sleep_interval;
 		string robot_id;
-		if (false ==  get_robot_id(robot_id)) {
+		if (false == get_robot_id(robot_id)) {
 			return;
 		}
 		for (int i = 0;i < try_cnt;i++) {

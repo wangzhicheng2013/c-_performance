@@ -5,6 +5,8 @@
 #include "zeg_robot_config.hpp"
 #include "zeg_robot_task_ack_parser.hpp"
 #include "zeg_robot_point_lock_parser.hpp"
+#include "zeg_robot_point_free_parser.hpp"
+#include "zeg_robot_task_finish_parser.hpp"
 namespace zeg_robot_scheduler_communication {
 class zeg_robot_command_processor {
 public:

@@ -27,8 +27,9 @@ bool report_task_to_robot(rpc_conn conn, const zeg_robot_header &header, const z
 		return false;
 	}
 	int size = reinterpret_cast<zeg_robot_udp_server *>(G_UDP_SEVER_PTR.get())->send_to_client(pack_str.c_str(), pack_str.size(), *client_ptr);
+	LOG_INFO << "send task to robot id = " << header.robot_id << " robot ip = " << inet_ntoa(client_ptr->sin_addr) << ":" << client_ptr->sin_port;
 	zeg_robot_task_escort::get().store_robot_task(robot_task.task_id, pack_str);
-	LOG_INFO << "send zeg robot task size = " << size;
+	LOG_INFO << "robot id = " << header.robot_id << " send zeg robot task size = " << size;
 	if (pack_str.size() != size) {
 		LOG_CRIT << "send size = " << size << " need send size = " << pack_str.size();
 	}
@@ -67,6 +68,3 @@ int main() {
 
 	return 0;
 }
-
-
-

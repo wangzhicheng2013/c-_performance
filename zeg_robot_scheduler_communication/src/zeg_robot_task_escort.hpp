@@ -45,6 +45,7 @@ public:
 			return;
 		}
 		queue_.enqueue(task_id);
+		LOG_INFO << "task id = " << task_id << " robot task store ok.";
 	}
 	void get_taskid(string &taskid) {
 		queue_.wait_dequeue(taskid);

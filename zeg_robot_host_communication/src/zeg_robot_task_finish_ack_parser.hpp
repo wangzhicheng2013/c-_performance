@@ -17,7 +17,8 @@ public:
 			return false;
 		}
 		LOG_INFO << cmd.task_id << " parse task finish ack ok.";
-		return call_report_task_finish_ack_to_robot(unpack_cmd, cmd);
+		return true;	// not need to send to robot
+		//return call_report_task_finish_ack_to_robot(unpack_cmd, cmd);
 	}
 private:
 	bool call_report_task_finish_ack_to_robot(const zeg_robot_command_unpack_struct *unpack_cmd, const zeg_robot_task_finish_ack &cmd) {
