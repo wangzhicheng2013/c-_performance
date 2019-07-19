@@ -1,8 +1,0 @@
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/CMakeFiles/rebuild_cache.dir
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/CMakeFiles/edit_cache.dir
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/src/CMakeFiles/rebuild_cache.dir
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/src/CMakeFiles/zeg_robot_maintainence.dir
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/src/CMakeFiles/edit_cache.dir
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/src/tests/CMakeFiles/rebuild_cache.dir
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/src/tests/CMakeFiles/unit_test.dir
-/opt/zeg_robot_maintainence/zeg_robot_maintainence/build/src/tests/CMakeFiles/edit_cache.dir

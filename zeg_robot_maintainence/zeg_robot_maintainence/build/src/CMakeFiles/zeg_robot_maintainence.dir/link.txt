@@ -1,1 +1,0 @@
-/usr/bin/c++   -g -ltcmalloc -pthread -std=c++17 -O3 -DNDEBUG   CMakeFiles/zeg_robot_maintainence.dir/main.cpp.o  -o ../../bin/zeg_robot_maintainence  -L/opt/zeg_robot_maintainence/zeg_robot_maintainence/libs -Wl,-rpath,/opt/zeg_robot_maintainence/zeg_robot_maintainence/libs -lzmq -lstdc++fs 
